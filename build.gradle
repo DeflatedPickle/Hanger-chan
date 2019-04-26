@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.2.51'
+}
+
+group 'deflatedpickle'
+version '1.0.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    compile group: 'net.java.dev.jna', name: 'jna', version: '5.2.0'
+    compile 'net.java.dev.jna:jna-platform:5.2.0'
+    
+    compile "org.joml:joml:1.9.12"
+
+    // compile 'org.dyn4j:dyn4j:3.3.0'
+    // compile 'com.github.dyn4j:dyn4j-samples:-SNAPSHOT'
+
+    // compile 'cz.advel.jbullet:jbullet:20101010'
+
+    compile group: 'org.jbox2d', name: 'jbox2d-library', version: '2.2.1.1'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
