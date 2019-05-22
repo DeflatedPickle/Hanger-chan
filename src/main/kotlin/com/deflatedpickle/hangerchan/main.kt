@@ -110,7 +110,7 @@ fun main(args: Array<String>) {
         cursorBody.setTransform(Vec2((cursorLocation.x.toFloat() + cursorWidth / 4) * PhysicsUtil.scaleDown, -(cursorLocation.y.toFloat() + cursorHeight / 4) * PhysicsUtil.scaleDown), 0f)
         (cursorBody.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
 
-        cursorBody.isActive = User32.INSTANCE.GetAsyncKeyState(0x01) < 0 && !hangerchan.isGrabbed
+        cursorBody.isActive = User32.INSTANCE.GetAsyncKeyState(User32Extended.VK_LBUTTON) < 0 && !hangerchan.isGrabbed
     })
     timer.start()
 

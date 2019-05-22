@@ -46,6 +46,11 @@ public interface User32Extended extends User32 {
     long WS_EX_OVERLAPPEDWINDOW = (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE);
     long WS_EX_PALETTEWINDOW = (WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
 
+    // https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+    int VK_LBUTTON = 0x01;
+    int VK_RBUTTON = 0x02;
+    int VK_MBUTTON = 0x04;
+
     // https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-gettitlebarinfo
     boolean GetTitleBarInfo(WinDef.HWND hwnd, TITLEBARINFO titlebarinfo);
 
