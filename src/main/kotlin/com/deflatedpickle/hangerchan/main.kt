@@ -2,9 +2,11 @@ package com.deflatedpickle.hangerchan
 
 // import org.dyn4j.dynamics.World
 // import org.dyn4j.geometry.Vector2
+import com.deflatedpickle.jna.User32Extended
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.platform.win32.WinGDI
 import com.sun.jna.platform.win32.WinUser
 import org.jbox2d.callbacks.ContactImpulse
 import org.jbox2d.callbacks.ContactListener
@@ -61,7 +63,22 @@ fun main(args: Array<String>) {
     }
     world.setContactListener(collisions)
 
+    // Cursor
+    val cursorLocation = WinDef.POINT()
+    User32.INSTANCE.GetCursorPos(cursorLocation)
+
+    val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
+    val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
+
     val windowBodies = mutableMapOf<WinDef.HWND, Body>()
+    val cursorBody = world.createBody(BodyDef().apply {
+        position.set(cursorLocation.x + cursorWidth / 2f, -cursorLocation.y - cursorHeight / 2f)
+    }).apply {
+        createFixture(PolygonShape().apply {
+            setAsBox(cursorWidth / 2f, cursorHeight / 2f)
+        }, 0f)
+    }
+    hangerchan.cursor = cursorBody
     val timer = Timer(120 / 2, ActionListener {
         world.step(1f / 60f, 6, 2)
 
@@ -83,6 +100,17 @@ fun main(args: Array<String>) {
             v.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
             (v.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
         }
+
+        User32.INSTANCE.GetCursorPos(cursorLocation)
+
+        // TODO: Get the size of the current cursor instead of the constant size
+        val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
+        val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
+        // println("${cursorLocation.x}:${cursorLocation.y}, $cursorWidth:$cursorHeight")
+        cursorBody.setTransform(Vec2((cursorLocation.x.toFloat() + cursorWidth / 4) * PhysicsUtil.scaleDown, -(cursorLocation.y.toFloat() + cursorHeight / 4) * PhysicsUtil.scaleDown), 0f)
+        (cursorBody.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
+
+        cursorBody.isActive = User32.INSTANCE.GetAsyncKeyState(0x01) < 0 && !hangerchan.isGrabbed
     })
     timer.start()
 
@@ -135,26 +163,33 @@ fun main(args: Array<String>) {
 
     // Windows
     for (w in WindowUtil.getAllWindows(0)) {
-        val rect = WinDef.RECT()
-        User32.INSTANCE.GetWindowRect(w, rect)
+        // I think these program's open on start-up and fail the window check, even when you haven't used them
+        // So they have a window border, so
+        // TODO: Figure out why these programs behave like this and find more examples that act like this
+        // More examples might help finding out why they behave like this
+        val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos")
+        if (WindowUtil.getTitle(w) !in annoyingPrograms) {
+            val rect = WinDef.RECT()
+            User32.INSTANCE.GetWindowRect(w, rect)
 
-        val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-        val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-        val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-        val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
+            val x = rect.left.toFloat() * PhysicsUtil.scaleDown
+            val y = rect.top.toFloat() * PhysicsUtil.scaleDown
+            val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
+            val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
 
-        // println("X: $x, Y: $y, Width: $width, Height: $height")
+            // println("X: $x, Y: $y, Width: $width, Height: $height")
 
-        // TODO: Split into a fixture for each side of the window, so something can happen inside a window
-        val body = world.createBody(BodyDef().apply {
-            position.set(x + width / 2, -y - height / 2)
-        }).apply {
-            createFixture(PolygonShape().apply {
-                setAsBox(width / 2, height / 2)
-            }, 0f)
+            // TODO: Split into a fixture for each side of the window, so something can happen inside a window
+            val body = world.createBody(BodyDef().apply {
+                position.set(x + width / 2, -y - height / 2)
+            }).apply {
+                createFixture(PolygonShape().apply {
+                    setAsBox(width / 2, height / 2)
+                }, 0f)
+            }
+            hangerchan.windows.add(body)
+
+            windowBodies[w] = body
         }
-        hangerchan.windows.add(body)
-
-        windowBodies[w] = body
     }
 }

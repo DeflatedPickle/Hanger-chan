@@ -54,4 +54,6 @@ public interface User32Extended extends User32 {
 
     // https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-isiconic
     boolean IsIconic(WinDef.HWND hwnd);
+
+    HCURSOR GetCursor();
 }

@@ -33,6 +33,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
 
     var borders: MutableList<Body> = mutableListOf()
     var windows: MutableList<Body> = mutableListOf()
+    var cursor: Body? = null
 
     // -1 = Left, 1 = Right
     var direction = -1
@@ -206,17 +207,27 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
         PhysicsUtil.drawPhysicsShape(g2D, body)
 
         g2D.color = Color.GREEN
-        if (!borders.isEmpty()) {
+        if (borders.isNotEmpty()) {
             for (b in borders) {
                 PhysicsUtil.drawPhysicsShape(g2D, b)
             }
         }
 
         g2D.color = Color.MAGENTA
-        if (!windows.isEmpty()) {
+        if (windows.isNotEmpty()) {
             for (w in windows) {
                 PhysicsUtil.drawPhysicsShape(g2D, w)
             }
+        }
+
+        if (cursor != null) {
+            if (cursor!!.isActive) {
+                g2D.color = Color.CYAN
+            }
+            else {
+                g2D.color = Color.BLACK
+            }
+            PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
         }
     }
 }
