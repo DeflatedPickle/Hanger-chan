@@ -1,5 +1,6 @@
 package com.deflatedpickle.hangerchan
 
+import com.sun.jna.platform.win32.WinDef
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
@@ -32,7 +33,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windows: MutableList<Body> = mutableListOf()
+    var windows: MutableMap<WinDef.HWND, Body> = mutableMapOf()
     var cursor: Body? = null
 
     // -1 = Left, 1 = Right
@@ -213,10 +214,9 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
             }
         }
 
-        g2D.color = Color.MAGENTA
         if (windows.isNotEmpty()) {
             for (w in windows) {
-                PhysicsUtil.drawPhysicsShape(g2D, w)
+                PhysicsUtil.drawWindowShape(w.key, g2D, w.value)
             }
         }
 

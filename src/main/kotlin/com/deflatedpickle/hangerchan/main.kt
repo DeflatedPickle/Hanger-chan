@@ -167,7 +167,7 @@ fun main(args: Array<String>) {
         // So they have a window border, so
         // TODO: Figure out why these programs behave like this and find more examples that act like this
         // More examples might help finding out why they behave like this
-        val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos")
+        val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
         if (WindowUtil.getTitle(w) !in annoyingPrograms) {
             val rect = WinDef.RECT()
             User32.INSTANCE.GetWindowRect(w, rect)
@@ -187,7 +187,7 @@ fun main(args: Array<String>) {
                     setAsBox(width / 2, height / 2)
                 }, 0f)
             }
-            hangerchan.windows.add(body)
+            hangerchan.windows[w] = body
 
             windowBodies[w] = body
         }
