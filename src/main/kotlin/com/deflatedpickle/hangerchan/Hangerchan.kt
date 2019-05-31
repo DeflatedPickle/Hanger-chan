@@ -8,15 +8,18 @@ import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.BodyType
 import org.jbox2d.dynamics.World
 import java.awt.*
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.util.concurrent.ThreadLocalRandom
 import javax.swing.JFrame
 import javax.swing.JPanel
 
 class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
     var currentAction = Action.Idle
+
+    var beingControlled = false
 
     val body = world.createBody(BodyDef().apply {
         type = BodyType.DYNAMIC
@@ -49,6 +52,8 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     var isBeingPulled = false
 
     var justFell = false
+
+    var onGround = false
 
     // Changes when the mouse is clicked -- used to determine thrown force
     var clickedX = 0f
@@ -95,6 +100,36 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                 }
             }
         }.apply { myFrame.addMouseMotionListener(this) })
+
+        myFrame.addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                when (e.keyChar) {
+                    'a' -> {
+                        currentAction = Action.Walking
+                        direction = -1
+                    }
+                    'd' -> {
+                        currentAction = Action.Walking
+                        direction = 1
+                    }
+                    ' ' -> {
+                        currentAction = if (onGround) {
+                            Action.Jumping
+                        }
+                        else {
+                            Action.Idle
+                        }
+                    }
+                    else -> {
+                        currentAction = Action.Idle
+                    }
+                }
+            }
+
+            override fun keyReleased(e: KeyEvent?) {
+                currentAction = Action.Idle
+            }
+        })
     }
 
     fun animate() {
@@ -104,92 +139,42 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
             currentFrame = 0
         }
 
-        when (collisionSide?.x) {
-            // Left
-            -1f -> {
-                direction = 1
-                collisionSide = null
-            }
-            // Right
-            1f -> {
-                direction = -1
-                collisionSide = null
-            }
-        }
-
-        if (body.linearVelocity.y < -1 && clickedY == 0f || currentAction == Action.Thrown) {
-            currentAction = Action.Falling
-            justFell = true
-        }
-        else if (clickedY != 0f) {
-            currentAction = Action.Thrown
+        if (beingControlled) {
+            currentAction.manual(this)
         }
         else {
-            if (justFell) {
-                currentAction = Action.Idle
-                justFell = false
-            }
-        }
-
-        if (isGrabbed) {
-            currentAction = Action.Grabbed
-        }
-
-        // println(currentAction)
-
-        when (currentAction) {
-            Action.Idle -> {
-                // If this is set lower, her velocity stays at 0 forever. Bug?
-                body.linearVelocity.x = 0.4f
-
-                if (graceCooldown == 0) {
-                    val random = ThreadLocalRandom.current().nextInt(0, 11)
-
-                    if (random == 0) {
-                        currentAction = Action.Walking
-                        graceCooldown = ThreadLocalRandom.current().nextInt(25, 36)
-                    }
-                    else if (random == 1) {
-                        direction *= -1
-                    }
+            when (collisionSide?.x) {
+                // Left
+                -1f -> {
+                    direction = 1
+                    collisionSide = null
                 }
-                else {
-                    graceCooldown--
+                // Right
+                1f -> {
+                    direction = -1
+                    collisionSide = null
                 }
             }
-            Action.Walking -> {
-                body.linearVelocity.x = 12f * direction
 
-                if (graceCooldown == 0) {
-                    val random = ThreadLocalRandom.current().nextInt(0, 11)
-
-                    if (random == 0) {
-                        currentAction = Action.Idle
-                        graceCooldown = ThreadLocalRandom.current().nextInt(25, 36)
-                    }
-                }
-                else {
-                    graceCooldown--
-                }
+            if (body.linearVelocity.y < -1 && clickedY == 0f || currentAction == Action.Thrown) {
+                currentAction = Action.Falling
+                justFell = true
             }
-            Action.Grabbed -> {
-                if (isBeingPulled) {
-                    body.linearVelocity.x = 0f
-                    body.setTransform(Vec2(mouseX, -mouseY), 0f)
+            else if (clickedY != 0f) {
+                currentAction = Action.Thrown
+            }
+            else {
+                if (justFell) {
+                    currentAction = Action.Idle
+                    justFell = false
                 }
             }
-            // TODO: Add some force when she's thrown
-            Action.Thrown -> {
-                // val force = Vec2(0f, clickedY + releasedY)
-                // println(force)
-                // body.linearVelocity = force
-                // currentAction = Action.Falling
 
-                clickedX = 0f
-                clickedY = 0f
-                releasedX = 0f
-                releasedY = 0f
+            if (isGrabbed) {
+                currentAction = Action.Grabbed
             }
+
+            currentAction.automatic(this)
         }
     }
 
@@ -229,5 +214,13 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
             }
             PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
         }
+    }
+
+    fun walk(direction: Int) {
+        body.linearVelocity.x = 12f * direction
+    }
+
+    fun jump() {
+        body.linearVelocity.y = 12f
     }
 }

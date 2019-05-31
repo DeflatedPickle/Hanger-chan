@@ -46,9 +46,11 @@ fun main(args: Array<String>) {
     var collisionPoint = Vec2()
     val collisions = object : ContactListener {
         override fun endContact(contact: Contact) {
+            hangerchan.onGround = contact.isTouching
         }
 
         override fun beginContact(contact: Contact) {
+            hangerchan.onGround = contact.isTouching
         }
 
         override fun preSolve(contact: Contact, oldManifold: Manifold) {
