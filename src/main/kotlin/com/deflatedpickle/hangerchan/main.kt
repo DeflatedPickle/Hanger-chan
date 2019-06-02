@@ -1,19 +1,15 @@
 package com.deflatedpickle.hangerchan
 
-// import org.dyn4j.dynamics.World
-// import org.dyn4j.geometry.Vector2
 import com.deflatedpickle.jna.User32Extended
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
-import com.sun.jna.platform.win32.WinGDI
 import com.sun.jna.platform.win32.WinUser
 import org.jbox2d.callbacks.ContactImpulse
 import org.jbox2d.callbacks.ContactListener
 import org.jbox2d.collision.Manifold
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
-import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.World
 import org.jbox2d.dynamics.contacts.Contact
@@ -72,7 +68,6 @@ fun main(args: Array<String>) {
     val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
     val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
 
-    val windowBodies = mutableMapOf<WinDef.HWND, Body>()
     val cursorBody = world.createBody(BodyDef().apply {
         position.set(cursorLocation.x + cursorWidth / 2f, -cursorLocation.y - cursorHeight / 2f)
     }).apply {
@@ -81,26 +76,76 @@ fun main(args: Array<String>) {
         }, 0f)
     }
     hangerchan.cursor = cursorBody
-    val timer = Timer(120 / 2, ActionListener {
-        world.step(1f / 60f, 6, 2)
+    var counter = 0
+    val openWindows = mutableListOf<WinDef.HWND>()
+    val timer = Timer(1000 / 144 * 4, ActionListener {
+        counter++
 
-        hangerchan.animate()
-        hangerchan.repaint()
+        // Check if there are any new windows
+        if (counter % 12 == 0) {
+            for (w in WindowUtil.getAllWindows(0)) {
+                // I think these program's open on start-up and fail the window check, even when you haven't used them
+                // So they have a window border, so
+                // TODO: Figure out why these programs behave like this and find more examples that act like this
+                // More examples might help finding out why they behave like this
+                val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
+                if (WindowUtil.getTitle(w) !in annoyingPrograms && !hangerchan.windows.containsKey(w)) {
+                    // println("Found new windows")
+                    openWindows.add(w)
 
-        // TODO: Only update it if the position has changed
-        // TODO: Poll for windows open since Hanger-chan was run
-        // TODO: Try moving to a second thread to see if there's a performance increase
-        for ((k, v) in windowBodies) {
+                    val rect = WinDef.RECT()
+                    User32.INSTANCE.GetWindowRect(w, rect)
+
+                    val x = rect.left.toFloat() * PhysicsUtil.scaleDown
+                    val y = rect.top.toFloat() * PhysicsUtil.scaleDown
+                    val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
+                    val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
+
+                    // println("X: $x, Y: $y, Width: $width, Height: $height")
+
+                    // TODO: Split into a fixture for each side of the window, so something can happen inside a window
+                    val body = world.createBody(BodyDef().apply {
+                        position.set(x + width / 2, -y - height / 2)
+                    }).apply {
+                        createFixture(PolygonShape().apply {
+                            setAsBox(width / 2, height / 2)
+                        }, 0f)
+                    }
+                    hangerchan.windows[w] = WindowInfo(w, rect, body)
+                }
+            }
+
+            for (i in openWindows) {
+                if (WindowUtil.getTitle(i) == "" && hangerchan.windows.keys.contains(i)) {
+                    // println("A window was closed")
+                    hangerchan.windows.remove(i)
+                }
+            }
+        }
+
+        if (counter % 3 == 0) {
+            world.step(1f / 60f, 1, 1)
+
+            hangerchan.animate()
+        }
+
+        for ((k, v) in hangerchan.windows) {
             val rect = WinDef.RECT()
             User32.INSTANCE.GetWindowRect(k, rect)
 
-            val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-            val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-            val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-            val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
+            // Check if the positions are the same before moving the collision box
+            // Occasionally fails, leaving the box far away from the window, don't know why
+            // if (v.lastUnits.top != rect.top && v.lastUnits.bottom != rect.bottom && v.lastUnits.left != rect.left && v.lastUnits.right != rect.right) {
+                val x = rect.left.toFloat() * PhysicsUtil.scaleDown
+                val y = rect.top.toFloat() * PhysicsUtil.scaleDown
+                val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
+                val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
 
-            v.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
-            (v.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
+                v.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
+                (v.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
+            // }
+
+            v.lastUnits = rect
         }
 
         User32.INSTANCE.GetCursorPos(cursorLocation)
@@ -113,6 +158,8 @@ fun main(args: Array<String>) {
         (cursorBody.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
 
         cursorBody.isActive = User32.INSTANCE.GetAsyncKeyState(User32Extended.VK_LBUTTON) < 0 && !hangerchan.isGrabbed
+
+        hangerchan.repaint()
     })
     timer.start()
 
@@ -162,36 +209,4 @@ fun main(args: Array<String>) {
             setAsBox(1f, monitorHeight / 2)
         }, 0f)
     })
-
-    // Windows
-    for (w in WindowUtil.getAllWindows(0)) {
-        // I think these program's open on start-up and fail the window check, even when you haven't used them
-        // So they have a window border, so
-        // TODO: Figure out why these programs behave like this and find more examples that act like this
-        // More examples might help finding out why they behave like this
-        val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
-        if (WindowUtil.getTitle(w) !in annoyingPrograms) {
-            val rect = WinDef.RECT()
-            User32.INSTANCE.GetWindowRect(w, rect)
-
-            val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-            val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-            val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-            val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
-
-            // println("X: $x, Y: $y, Width: $width, Height: $height")
-
-            // TODO: Split into a fixture for each side of the window, so something can happen inside a window
-            val body = world.createBody(BodyDef().apply {
-                position.set(x + width / 2, -y - height / 2)
-            }).apply {
-                createFixture(PolygonShape().apply {
-                    setAsBox(width / 2, height / 2)
-                }, 0f)
-            }
-            hangerchan.windows[w] = body
-
-            windowBodies[w] = body
-        }
-    }
 }

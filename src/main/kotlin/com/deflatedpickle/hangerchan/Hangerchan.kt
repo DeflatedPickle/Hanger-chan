@@ -36,7 +36,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windows: MutableMap<WinDef.HWND, Body> = mutableMapOf()
+    var windows: MutableMap<WinDef.HWND, WindowInfo> = mutableMapOf()
     var cursor: Body? = null
 
     // -1 = Left, 1 = Right
@@ -201,7 +201,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
 
         if (windows.isNotEmpty()) {
             for (w in windows) {
-                PhysicsUtil.drawWindowShape(w.key, g2D, w.value)
+                PhysicsUtil.drawWindowShape(w.key, g2D, w.value.body)
             }
         }
 
