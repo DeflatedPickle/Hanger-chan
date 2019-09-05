@@ -7,6 +7,7 @@ import org.jbox2d.dynamics.Body
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
+import kotlin.math.roundToInt
 
 object PhysicsUtil {
     // *claw* RAWR *claw* UWU
@@ -53,7 +54,7 @@ object PhysicsUtil {
         val originalFont = graphics2D.font
         graphics2D.font = Font(originalFont.fontName, Font.BOLD, 14)
 
-        val finalX = (vertices[0].x + x + 1) * scaleUp
+        val finalX = (vertices[0].x + x) * scaleUp
         val finalY = (vertices[0].y - y + 1) * scaleUp
         val width = graphics2D.fontMetrics.stringWidth(title)
         val height = graphics2D.fontMetrics.height
@@ -67,5 +68,21 @@ object PhysicsUtil {
 
         graphics2D.color = Color.MAGENTA
         drawPhysicsShape(graphics2D, body)
+    }
+
+    fun drawWindowFill(graphics2D: Graphics2D, body: Body) {
+        val shape = (body.fixtureList.shape as PolygonShape)
+        val vertices = shape.vertices
+
+        val x = body.transform.p.x
+        val y = body.transform.p.y
+
+        val topX = (vertices[0].x + x) * scaleUp
+        val topY = (vertices[0].y - y) * scaleUp
+
+        val width = (vertices[2].x * 2) * scaleUp
+        val height = (vertices[2].y * 2) * scaleUp
+
+        graphics2D.fillRect(topX.toInt(), topY.toInt(), width.toInt(), height.toInt())
     }
 }

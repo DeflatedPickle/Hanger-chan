@@ -10,6 +10,7 @@ import org.jbox2d.callbacks.ContactListener
 import org.jbox2d.collision.Manifold
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
+import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.World
 import org.jbox2d.dynamics.contacts.Contact
@@ -103,7 +104,6 @@ fun main(args: Array<String>) {
 
                     // println("X: $x, Y: $y, Width: $width, Height: $height")
 
-                    // TODO: Split into a fixture for each side of the window, so something can happen inside a window
                     val body = world.createBody(BodyDef().apply {
                         position.set(x + width / 2, -y - height / 2)
                     }).apply {
@@ -111,7 +111,46 @@ fun main(args: Array<String>) {
                             setAsBox(width / 2, height / 2)
                         }, 0f)
                     }
-                    hangerchan.windows[w] = WindowInfo(w, rect, body)
+
+                    val internalBodyList = mutableListOf<Body>()
+
+                    internalBodyList.add(world.createBody(BodyDef().apply {
+                        position.set(x, -y - height / 2)
+                    }).apply {
+                        isActive = false
+                        createFixture(PolygonShape().apply {
+                            setAsBox(0f, height / 2)
+                        }, 0f)
+                    })
+
+                    internalBodyList.add(world.createBody(BodyDef().apply {
+                        position.set(x + width, -y - height / 2)
+                    }).apply {
+                        isActive = false
+                        createFixture(PolygonShape().apply {
+                            setAsBox(0f, height / 2)
+                        }, 0f)
+                    })
+
+                    internalBodyList.add(world.createBody(BodyDef().apply {
+                        position.set(x + width / 2, -y)
+                    }).apply {
+                        isActive = false
+                        createFixture(PolygonShape().apply {
+                            setAsBox(width / 2, 0f)
+                        }, 0f)
+                    })
+
+                    internalBodyList.add(world.createBody(BodyDef().apply {
+                        position.set(x + width / 2, -y - height)
+                    }).apply {
+                        isActive = false
+                        createFixture(PolygonShape().apply {
+                            setAsBox(width / 2, 0f)
+                        }, 0f)
+                    })
+
+                    hangerchan.windows[w] = Window(w, rect, body, internalBodyList)
                 }
             }
 
@@ -136,14 +175,26 @@ fun main(args: Array<String>) {
             // Check if the positions are the same before moving the collision box
             // Occasionally fails, leaving the box far away from the window, don't know why
             // if (v.lastUnits.top != rect.top && v.lastUnits.bottom != rect.bottom && v.lastUnits.left != rect.left && v.lastUnits.right != rect.right) {
-                val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-                val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-                val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-                val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
+            val x = rect.left.toFloat() * PhysicsUtil.scaleDown
+            val y = rect.top.toFloat() * PhysicsUtil.scaleDown
+            val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
+            val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
 
-                v.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
-                (v.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
+            v.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
+            (v.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
             // }
+
+            v.internalBodyList[0].setTransform(Vec2(x, -y - height / 2), 0f)
+            (v.internalBodyList[0].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
+
+            v.internalBodyList[1].setTransform(Vec2(x + width, -y - height / 2), 0f)
+            (v.internalBodyList[1].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
+
+            v.internalBodyList[2].setTransform(Vec2(x + width / 2, -y), 0f)
+            (v.internalBodyList[2].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
+
+            v.internalBodyList[3].setTransform(Vec2(x + width / 2, -y - height), 0f)
+            (v.internalBodyList[3].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
 
             v.lastUnits = rect
         }

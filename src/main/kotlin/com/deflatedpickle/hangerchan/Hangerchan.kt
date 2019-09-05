@@ -36,8 +36,11 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windows: MutableMap<WinDef.HWND, WindowInfo> = mutableMapOf()
+    var windows: MutableMap<WinDef.HWND, Window> = mutableMapOf()
     var cursor: Body? = null
+
+    var isEmbedded = false
+    var embeddedWindow: WinDef.HWND? = null
 
     // -1 = Left, 1 = Right
     var direction = -1
@@ -84,6 +87,21 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                 if (isGrabbed) {
                     releasedX = e.xOnScreen * PhysicsUtil.scaleDown
                     releasedY = e.yOnScreen * PhysicsUtil.scaleDown
+
+                    // TODO: Drag over desktop to reset the embedded window
+                    for (w in windows) {
+                        if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right
+                                && mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                            isEmbedded = true
+                            embeddedWindow = w.key
+                            w.value.body.isActive = false
+
+                            for (i in w.value.internalBodyList) {
+                                i.isActive = true
+                            }
+                            break
+                        }
+                    }
                 }
 
                 isGrabbed = false
@@ -95,7 +113,6 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                 mouseY = e.yOnScreen * PhysicsUtil.scaleDown
 
                 if (isGrabbed) {
-
                     isBeingPulled = true
                 }
             }
@@ -199,12 +216,6 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
             }
         }
 
-        if (windows.isNotEmpty()) {
-            for (w in windows) {
-                PhysicsUtil.drawWindowShape(w.key, g2D, w.value.body)
-            }
-        }
-
         if (cursor != null) {
             if (cursor!!.isActive) {
                 g2D.color = Color.CYAN
@@ -213,6 +224,33 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                 g2D.color = Color.BLACK
             }
             PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
+        }
+
+        if (windows.isNotEmpty()) {
+            for (w in windows) {
+                if (embeddedWindow == w.key) {
+                    for (ww in w.value.internalBodyList) {
+                        g2D.color = Color.PINK
+                        g2D.stroke = BasicStroke(8f)
+                        PhysicsUtil.drawPhysicsShape(g2D, ww)
+                    }
+                }
+
+                if (isGrabbed) {
+                    if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right
+                            && mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                        g2D.color = Color.CYAN
+                        g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
+                        PhysicsUtil.drawWindowFill(g2D, w.value.body)
+                        break
+                    }
+                }
+            }
+
+            for (w in windows) {
+                g2D.stroke = BasicStroke(2f)
+                PhysicsUtil.drawWindowShape(w.key, g2D, w.value.body)
+            }
         }
     }
 
