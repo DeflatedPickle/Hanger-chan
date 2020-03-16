@@ -1,4 +1,6 @@
-package com.deflatedpickle.hangerchan
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
+package com.deflatedpickle.hangerchan.util
 
 import com.deflatedpickle.jna.TITLEBARINFO
 import com.deflatedpickle.jna.User32Extended
@@ -9,7 +11,6 @@ import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.ptr.IntByReference
 import org.joml.Vector2i
-
 
 /**
  * A utility object for working with windows on-screen
@@ -94,8 +95,7 @@ object WindowUtil {
             if (wText == pntr.getStringArray(0L)[0]) {
                 window = hwnd
                 return@EnumWindows false
-            }
-            else {
+            } else {
                 if (partial) {
                     if (wText.contains(pntr.getStringArray(0L)[0])) {
                         window = hwnd
@@ -174,10 +174,10 @@ object WindowUtil {
     // TODO: Check if the program is running in the background, if so, return false
     // TODO: Move visibility checks to a different function
     fun isWindow(hwnd: WinDef.HWND): Boolean {
-        if (getTitle(hwnd).isEmpty()
-                || !User32.INSTANCE.IsWindowVisible(hwnd)
-                || !User32.INSTANCE.IsWindowEnabled(hwnd)
-                || User32.INSTANCE.GetWindowLong(hwnd, User32.GWL_EXSTYLE) and User32Extended.WS_EX_TOOLWINDOW != 0) {
+        if (getTitle(hwnd).isEmpty() ||
+                !User32.INSTANCE.IsWindowVisible(hwnd) ||
+                !User32.INSTANCE.IsWindowEnabled(hwnd) ||
+                User32.INSTANCE.GetWindowLong(hwnd, User32.GWL_EXSTYLE) and User32Extended.WS_EX_TOOLWINDOW != 0) {
             return false
         }
 

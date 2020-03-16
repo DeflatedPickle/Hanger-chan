@@ -1,11 +1,12 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan
 
 import java.awt.Component
-import javax.swing.ImageIcon
-import java.awt.Graphics2D
 import java.awt.Graphics
+import java.awt.Graphics2D
 import java.awt.Image
-
+import javax.swing.ImageIcon
 
 /**
  * An <code>ImageIcon</code> that can be scaled

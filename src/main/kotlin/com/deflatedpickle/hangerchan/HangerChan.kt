@@ -1,21 +1,30 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan
 
+import com.deflatedpickle.hangerchan.util.PhysicsUtil
 import com.sun.jna.platform.win32.WinDef
+import java.awt.AlphaComposite
+import java.awt.BasicStroke
+import java.awt.Color
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.JPanel
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.BodyType
 import org.jbox2d.dynamics.World
-import java.awt.*
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import javax.swing.JFrame
-import javax.swing.JPanel
 
-class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
+class HangerChan(
+    val world: World
+) : JPanel() {
     val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
     var currentAction = Action.Idle
 
@@ -36,7 +45,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windows: MutableMap<WinDef.HWND, Window> = mutableMapOf()
+    var windows: MutableMap<WinDef.HWND, NativeWindow> = mutableMapOf()
     var cursor: Body? = null
 
     var isEmbedded = false
@@ -45,7 +54,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     // -1 = Left, 1 = Right
     var direction = -1
     // A cooldown that happens after the action is changed
-    var graceCooldown = 30
+    var graceCoolDown = 30
     var currentFrame = 0
 
     var collisionSide: Vec2? = null
@@ -71,11 +80,11 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
     init {
         isOpaque = false
 
-        myFrame.addMouseListener(object : MouseAdapter() {
+        ApplicationWindow.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
                 // If inside Hanger-chan
-                if (mouseX > body.position.x - sheet.spriteWidth / 2 && mouseX < body.position.x + sheet.spriteWidth / 2
-                        && mouseY > body.position.y - sheet.spriteHeight / 2 && mouseY < body.position.y + sheet.spriteHeight / 2) {
+                if (mouseX > body.position.x - sheet.spriteWidth / 2 && mouseX < body.position.x + sheet.spriteWidth / 2 &&
+                        mouseY > body.position.y - sheet.spriteHeight / 2 && mouseY < body.position.y + sheet.spriteHeight / 2) {
                     isGrabbed = true
 
                     clickedX = e.xOnScreen * PhysicsUtil.scaleDown
@@ -90,8 +99,8 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
 
                     // TODO: Drag over desktop to reset the embedded window
                     for (w in windows) {
-                        if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right
-                                && mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                        if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right &&
+                                mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
                             isEmbedded = true
                             embeddedWindow = w.key
                             w.value.body.isActive = false
@@ -116,9 +125,9 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                     isBeingPulled = true
                 }
             }
-        }.apply { myFrame.addMouseMotionListener(this) })
+        }.apply { ApplicationWindow.addMouseMotionListener(this) })
 
-        myFrame.addKeyListener(object : KeyAdapter() {
+        ApplicationWindow.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 when (e.keyChar) {
                     'a' -> {
@@ -132,8 +141,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                     ' ' -> {
                         currentAction = if (onGround) {
                             Action.Jumping
-                        }
-                        else {
+                        } else {
                             Action.Idle
                         }
                     }
@@ -158,8 +166,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
 
         if (beingControlled) {
             currentAction.manual(this)
-        }
-        else {
+        } else {
             when (collisionSide?.x) {
                 // Left
                 -1f -> {
@@ -176,11 +183,9 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
             if (body.linearVelocity.y < -1 && clickedY == 0f || currentAction == Action.Thrown) {
                 currentAction = Action.Falling
                 justFell = true
-            }
-            else if (clickedY != 0f) {
+            } else if (clickedY != 0f) {
                 currentAction = Action.Thrown
-            }
-            else {
+            } else {
                 if (justFell) {
                     currentAction = Action.Idle
                     justFell = false
@@ -201,13 +206,22 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
         g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
         // println("Position: ${body.position}, Velocity: ${body.linearVelocity}")
-        g.drawImage(sheet.spriteMap[currentAction.toString()]!![currentFrame], (body.position.x * PhysicsUtil.scaleUp - sheet.spriteWidth / 4 + if (direction == -1) sheet.spriteWidth / 2 else 0).toInt(), (-body.position.y * PhysicsUtil.scaleUp - sheet.spriteHeight / 4).toInt(), (sheet.spriteWidth / 2) * direction, sheet.spriteHeight / 2, this)
+        g.drawImage(
+                sheet.spriteMap[currentAction.toString()]!![currentFrame],
+                (body.position.x * PhysicsUtil.scaleUp - sheet.spriteWidth / 4 +
+                        if (direction == -1) sheet.spriteWidth / 2 else 0).toInt(),
+                (-body.position.y * PhysicsUtil.scaleUp - sheet.spriteHeight / 4).toInt(),
+                (sheet.spriteWidth / 2) * direction,
+                sheet.spriteHeight / 2,
+                this
+        )
 
         // Debug prints
         g2D.stroke = BasicStroke(2f)
 
         g2D.color = Color.RED
         PhysicsUtil.drawPhysicsShape(g2D, body)
+        PhysicsUtil.drawText(g2D, currentAction.name, body)
 
         g2D.color = Color.GREEN
         if (borders.isNotEmpty()) {
@@ -219,8 +233,7 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
         if (cursor != null) {
             if (cursor!!.isActive) {
                 g2D.color = Color.CYAN
-            }
-            else {
+            } else {
                 g2D.color = Color.BLACK
             }
             PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
@@ -237,8 +250,10 @@ class Hangerchan(val myFrame: JFrame, val world: World) : JPanel() {
                 }
 
                 if (isGrabbed) {
-                    if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right
-                            && mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                    if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left &&
+                            mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right &&
+                            mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top &&
+                            mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
                         g2D.color = Color.CYAN
                         g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
                         PhysicsUtil.drawWindowFill(g2D, w.value.body)

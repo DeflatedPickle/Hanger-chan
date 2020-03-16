@@ -1,15 +1,19 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan
 
 import java.awt.Image
 import java.io.File
 import javax.imageio.ImageIO
-import javax.swing.ImageIcon
-
 
 /**
  * A sprite sheet
  */
-class SpriteSheet(image: String, spriteNumX: Int, spriteNumY: Int) {
+class SpriteSheet(
+    image: String,
+    spriteNumX: Int,
+    spriteNumY: Int
+) {
     /**
      * The map of sprites cut from the sheet
      */

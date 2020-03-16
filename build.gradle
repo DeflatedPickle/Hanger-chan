@@ -1,7 +1,13 @@
 plugins {
     id 'java'
+    id 'application'
+
     id 'org.jetbrains.kotlin.jvm' version '1.2.51'
+
+    id 'com.diffplug.gradle.spotless' version '3.27.0'
 }
+apply plugin: 'java'
+apply plugin: 'idea'
 
 group 'deflatedpickle'
 version '1.0.0'
@@ -16,9 +22,11 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
+    // Native Structs And Functions
     compile group: 'net.java.dev.jna', name: 'jna', version: '5.2.0'
     compile 'net.java.dev.jna:jna-platform:5.2.0'
-    
+
+    // Math Stuff
     compile "org.joml:joml:1.9.12"
 
     // compile 'org.dyn4j:dyn4j:3.3.0'
@@ -26,7 +34,15 @@ dependencies {
 
     // compile 'cz.advel.jbullet:jbullet:20101010'
 
+    // Physics Stuff
     compile group: 'org.jbox2d', name: 'jbox2d-library', version: '2.2.1.1'
+
+    // Logging
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1'
+
+    // Terminal Colours
+    compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.18'
 }
 
 compileKotlin {
@@ -34,4 +50,12 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+spotless {
+    kotlin {
+        ktlint()
+
+        licenseHeader '/* Copyright (c) $YEAR DeflatedPickle under the MIT license */\n\n'
+    }
 }
