@@ -3,17 +3,27 @@
 package com.deflatedpickle.hangerchan.util
 
 import com.sun.jna.platform.win32.WinDef
+import org.apache.logging.log4j.LogManager
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
+import org.jbox2d.dynamics.World
 
 object PhysicsUtil {
     // *claw* RAWR *claw* UWU
     val scaleUp = 20f
     val scaleDown = 1 / scaleUp
+
+    val world = World(Vec2(0f, -80f))
+
+    private val logger = LogManager.getLogger(PhysicsUtil::class.simpleName)
+
+    init {
+        logger.debug("Constructed the world with gravity vector of { ${world.gravity.x}, ${world.gravity.y} }")
+    }
 
     fun drawPhysicsShape(graphics2D: Graphics2D, body: Body) {
         val shape = (body.fixtureList.shape as PolygonShape)
@@ -39,7 +49,7 @@ object PhysicsUtil {
         }
     }
 
-    fun drawText(graphics2D: Graphics2D, string: String, body: Body) {
+    fun drawText(graphics2D: Graphics2D, string: String, body: Body, xIncrease: Float = 0f, yIncrease: Float = 0f) {
         val shape = (body.fixtureList.shape as PolygonShape)
         val vertices = shape.vertices
 
@@ -49,8 +59,8 @@ object PhysicsUtil {
         val originalFont = graphics2D.font
         graphics2D.font = Font(originalFont.fontName, Font.BOLD, 14)
 
-        val finalX = (vertices[0].x + x) * scaleUp
-        val finalY = (vertices[0].y - y + 1) * scaleUp
+        val finalX = (vertices[0].x + x + xIncrease) * scaleUp
+        val finalY = (vertices[0].y - y + 1 + yIncrease) * scaleUp
         val width = graphics2D.fontMetrics.stringWidth(string)
         val height = graphics2D.fontMetrics.height
 

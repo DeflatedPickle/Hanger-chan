@@ -18,7 +18,6 @@ import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
-import org.jbox2d.dynamics.World
 import org.jbox2d.dynamics.contacts.Contact
 
 @Suppress("KDocMissingDocumentation")
@@ -27,11 +26,11 @@ fun main(args: Array<String>) {
     val logger = LogManager.getLogger("Main")
     val window = ApplicationWindow
 
-    val world = World(Vec2(0f, -80f))
-    logger.debug("Constructed the world with gravity vector of { ${world.gravity.x}, ${world.gravity.y} }")
+    logger.info("Launched Hanger-chan")
 
     // 1.524
-    val hangerChan = HangerChan(world)
+    // What do those numbers mean? I left that comment over a year ago with no context (16/03/2020)
+    val hangerChan = HangerChan(PhysicsUtil.world)
     logger.debug("Constructed Hanger-chan using the world")
     window.add(hangerChan)
     logger.info("Added the Hanger-chan widget to the window")
@@ -68,11 +67,11 @@ fun main(args: Array<String>) {
             hangerChan.collisionSide = collisionPoint
         }
     }
-    world.setContactListener(collisions)
+    PhysicsUtil.world.setContactListener(collisions)
     logger.debug("Added the collision listener")
 
     // Cursor
-    val cursorBody = CursorUtil.createBody(world)
+    val cursorBody = CursorUtil.createBody(PhysicsUtil.world)
     logger.debug("Created the cursor body")
     CursorUtil.body = cursorBody
     hangerChan.cursor = cursorBody
@@ -83,19 +82,19 @@ fun main(args: Array<String>) {
 
         // Check if there are any new windows
         if (counter % 12 == 0) {
-            for (w in WindowUtil.getAllWindows(0)) {
-                // I think these program's open on start-up and fail the window check, even when you haven't used them
+            for (hWnd in WindowUtil.getAllWindows(0)) {
+                // I think these programs open on start-up and fail the window check, even when you haven't used them
                 // So they have a window border, so
                 // TODO: Figure out why these programs behave like this and find more examples that act like this
-                // More examples might help finding out why they behave like this
+                // More examples might help to find out why they behave like this
                 val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
-                if (WindowUtil.getTitle(w) !in annoyingPrograms &&
-                        !hangerChan.windows.containsKey(w)) {
-                    logger.info("Added ${WindowUtil.getTitle(w)} to Hanger-chan's windows")
-                    openWindows.add(w)
+                if (WindowUtil.getTitle(hWnd) !in annoyingPrograms &&
+                        !hangerChan.windowMap.containsKey(hWnd)) {
+                    logger.info("Added ${WindowUtil.getTitle(hWnd)} to Hanger-chan's windows")
+                    openWindows.add(hWnd)
 
                     val rect = WinDef.RECT()
-                    User32.INSTANCE.GetWindowRect(w, rect)
+                    User32.INSTANCE.GetWindowRect(hWnd, rect)
 
                     val x = rect.left.toFloat() * PhysicsUtil.scaleDown
                     val y = rect.top.toFloat() * PhysicsUtil.scaleDown
@@ -104,7 +103,7 @@ fun main(args: Array<String>) {
 
                     // println("X: $x, Y: $y, Width: $width, Height: $height")
 
-                    val body = world.createBody(BodyDef().apply {
+                    val body = PhysicsUtil.world.createBody(BodyDef().apply {
                         position.set(x + width / 2, -y - height / 2)
                     }).apply {
                         createFixture(PolygonShape().apply {
@@ -114,7 +113,7 @@ fun main(args: Array<String>) {
 
                     val internalBodyList = mutableListOf<Body>()
 
-                    internalBodyList.add(world.createBody(BodyDef().apply {
+                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
                         position.set(x, -y - height / 2)
                     }).apply {
                         isActive = false
@@ -123,7 +122,7 @@ fun main(args: Array<String>) {
                         }, 0f)
                     })
 
-                    internalBodyList.add(world.createBody(BodyDef().apply {
+                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
                         position.set(x + width, -y - height / 2)
                     }).apply {
                         isActive = false
@@ -132,7 +131,7 @@ fun main(args: Array<String>) {
                         }, 0f)
                     })
 
-                    internalBodyList.add(world.createBody(BodyDef().apply {
+                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
                         position.set(x + width / 2, -y)
                     }).apply {
                         isActive = false
@@ -141,7 +140,7 @@ fun main(args: Array<String>) {
                         }, 0f)
                     })
 
-                    internalBodyList.add(world.createBody(BodyDef().apply {
+                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
                         position.set(x + width / 2, -y - height)
                     }).apply {
                         isActive = false
@@ -150,55 +149,55 @@ fun main(args: Array<String>) {
                         }, 0f)
                     })
 
-                    hangerChan.windows[w] = NativeWindow(w, rect, body, internalBodyList)
+                    hangerChan.windowMap[hWnd] = NativeWindow(hWnd, rect, body, internalBodyList)
                 }
             }
 
             for (i in openWindows) {
-                if (WindowUtil.getTitle(i) == "" && hangerChan.windows.keys.contains(i)) {
+                if (WindowUtil.getTitle(i) == "" && hangerChan.windowMap.keys.contains(i)) {
                     logger.info("Removed a window from Hanger-chan's windows")
-                    hangerChan.windows.remove(i)
+                    hangerChan.windowMap.remove(i)
                 }
             }
         }
 
         if (counter % 3 == 0) {
-            world.step(1f / 60f, 1, 1)
-            // logger.info("Increased the world step")
+            PhysicsUtil.world.step(1f / 60f, 1, 1)
+            // logger.info("Increased the PhysicsUtil.world step")
 
             hangerChan.animate()
         }
 
-        for ((k, v) in hangerChan.windows) {
+        for ((hWnd, nativeWindow) in hangerChan.windowMap) {
             val rect = WinDef.RECT()
-            User32.INSTANCE.GetWindowRect(k, rect)
+            User32.INSTANCE.GetWindowRect(hWnd, rect)
 
             // Check if the positions are the same before moving the collision box
             // Occasionally fails, leaving the box far away from the window, don't know why
-            if (v.lastUnits.top != rect.top && v.lastUnits.bottom != rect.bottom && v.lastUnits.left != rect.left && v.lastUnits.right != rect.right) {
+            if (nativeWindow.lastUnits.top != rect.top && nativeWindow.lastUnits.bottom != rect.bottom && nativeWindow.lastUnits.left != rect.left && nativeWindow.lastUnits.right != rect.right) {
                 val x = rect.left.toFloat() * PhysicsUtil.scaleDown
                 val y = rect.top.toFloat() * PhysicsUtil.scaleDown
                 val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
                 val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
 
-                v.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
-                (v.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
+                nativeWindow.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
+                (nativeWindow.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
 
-                v.internalBodyList[0].setTransform(Vec2(x, -y - height / 2), 0f)
-                (v.internalBodyList[0].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
+                nativeWindow.internalBodyList[0].setTransform(Vec2(x, -y - height / 2), 0f)
+                (nativeWindow.internalBodyList[0].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
 
-                v.internalBodyList[1].setTransform(Vec2(x + width, -y - height / 2), 0f)
-                (v.internalBodyList[1].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
+                nativeWindow.internalBodyList[1].setTransform(Vec2(x + width, -y - height / 2), 0f)
+                (nativeWindow.internalBodyList[1].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
 
-                v.internalBodyList[2].setTransform(Vec2(x + width / 2, -y), 0f)
-                (v.internalBodyList[2].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
+                nativeWindow.internalBodyList[2].setTransform(Vec2(x + width / 2, -y), 0f)
+                (nativeWindow.internalBodyList[2].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
 
-                v.internalBodyList[3].setTransform(Vec2(x + width / 2, -y - height), 0f)
-                (v.internalBodyList[3].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
+                nativeWindow.internalBodyList[3].setTransform(Vec2(x + width / 2, -y - height), 0f)
+                (nativeWindow.internalBodyList[3].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
 
-                v.lastUnits = rect
+                nativeWindow.lastUnits = rect
 
-                logger.info("Repositioned the body for ${WindowUtil.getTitle(k)}")
+                logger.info("Repositioned the body for ${WindowUtil.getTitle(hWnd)}")
             }
         }
 
@@ -213,6 +212,6 @@ fun main(args: Array<String>) {
     window.isVisible = true
     logger.debug("Made the window visible")
 
-    BorderUtil.createAllBorders(hangerChan, world)
+    BorderUtil.createAllBorders(hangerChan, PhysicsUtil.world)
     logger.debug("Created monitor borders")
 }

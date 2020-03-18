@@ -2,8 +2,12 @@
 
 package com.deflatedpickle.hangerchan
 
+import com.deflatedpickle.hangerchan.extensions.isInside
 import com.deflatedpickle.hangerchan.util.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.WindowUtil
+import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
+import org.apache.logging.log4j.LogManager
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -23,8 +27,10 @@ import org.jbox2d.dynamics.BodyType
 import org.jbox2d.dynamics.World
 
 class HangerChan(
-    val world: World
+        world: World
 ) : JPanel() {
+    private val logger = LogManager.getLogger(HangerChan::class.simpleName)
+
     val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
     var currentAction = Action.Idle
 
@@ -45,11 +51,11 @@ class HangerChan(
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windows: MutableMap<WinDef.HWND, NativeWindow> = mutableMapOf()
+    var windowMap: MutableMap<WinDef.HWND, NativeWindow> = mutableMapOf()
     var cursor: Body? = null
 
     var isEmbedded = false
-    var embeddedWindow: WinDef.HWND? = null
+    var embeddedWindow: WinDef.HWND = User32.INSTANCE.GetDesktopWindow()
 
     // -1 = Left, 1 = Right
     var direction = -1
@@ -98,17 +104,41 @@ class HangerChan(
                     releasedY = e.yOnScreen * PhysicsUtil.scaleDown
 
                     // TODO: Drag over desktop to reset the embedded window
-                    for (w in windows) {
-                        if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left && mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right &&
-                                mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top && mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                    for ((hWnd, nativeWindow) in windowMap) {
+                        if (hWnd != embeddedWindow &&
+                                mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
+                                mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
+                                mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
+                                mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
-                            embeddedWindow = w.key
-                            w.value.body.isActive = false
+                            embeddedWindow = hWnd
+                            nativeWindow.body.isActive = false
 
-                            for (i in w.value.internalBodyList) {
+                            logger.info("Placed Hanger-chan inside ${WindowUtil.getTitle(embeddedWindow!!)}")
+
+                            for (i in nativeWindow.internalBodyList) {
                                 i.isActive = true
                             }
                             break
+                        }
+                    }
+
+                    with(User32.INSTANCE.GetDesktopWindow()) {
+                        val list = mutableListOf<Boolean>()
+
+                        for ((_, nativeWindow) in windowMap) {
+                            if (!nativeWindow.lastUnits.isInside(mouseX, mouseY, PhysicsUtil.scaleUp)) {
+                                list.add(false)
+                            }
+                            else {
+                                list.add(true)
+                            }
+                        }
+
+                        if (list.all { !it }) {
+                            isEmbedded = true
+                            embeddedWindow = this
+                            list.clear()
                         }
                     }
                 }
@@ -129,16 +159,16 @@ class HangerChan(
 
         ApplicationWindow.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
-                when (e.keyChar) {
-                    'a' -> {
+                when (e.keyCode) {
+                    KeyEvent.VK_A -> {
                         currentAction = Action.Walking
                         direction = -1
                     }
-                    'd' -> {
+                    KeyEvent.VK_D -> {
                         currentAction = Action.Walking
                         direction = 1
                     }
-                    ' ' -> {
+                    KeyEvent.VK_SPACE -> {
                         currentAction = if (onGround) {
                             Action.Jumping
                         } else {
@@ -151,7 +181,7 @@ class HangerChan(
                 }
             }
 
-            override fun keyReleased(e: KeyEvent?) {
+            override fun keyReleased(e: KeyEvent) {
                 currentAction = Action.Idle
             }
         })
@@ -221,7 +251,11 @@ class HangerChan(
 
         g2D.color = Color.RED
         PhysicsUtil.drawPhysicsShape(g2D, body)
-        PhysicsUtil.drawText(g2D, currentAction.name, body)
+        val title = WindowUtil.getTitle(embeddedWindow)
+        PhysicsUtil.drawText(g2D, "Placed In: ${if (title != "") title else "Desktop"}", body, yIncrease = -1.4f)
+        PhysicsUtil.drawText(g2D, "X: ${"%.1f".format(body.position.x)}", body)
+        PhysicsUtil.drawText(g2D, "Y: ${"%.1f".format(body.position.y)}", body, yIncrease = 1.4f)
+        PhysicsUtil.drawText(g2D, "Act: ${currentAction.name}", body, yIncrease = 1.4f * 2)
 
         g2D.color = Color.GREEN
         if (borders.isNotEmpty()) {
@@ -239,8 +273,8 @@ class HangerChan(
             PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
         }
 
-        if (windows.isNotEmpty()) {
-            for (w in windows) {
+        if (windowMap.isNotEmpty()) {
+            for (w in windowMap) {
                 if (embeddedWindow == w.key) {
                     for (ww in w.value.internalBodyList) {
                         g2D.color = Color.PINK
@@ -262,9 +296,9 @@ class HangerChan(
                 }
             }
 
-            for (w in windows) {
+            for (window in windowMap) {
                 g2D.stroke = BasicStroke(2f)
-                PhysicsUtil.drawWindowShape(w.key, g2D, w.value.body)
+                PhysicsUtil.drawWindowShape(window.key, g2D, window.value.body)
             }
         }
     }

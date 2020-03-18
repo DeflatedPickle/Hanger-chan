@@ -53,13 +53,13 @@ object WindowUtil {
     fun getAllWindows(monitor: Int): List<WinDef.HWND> {
         val windows: MutableList<WinDef.HWND> = mutableListOf()
 
-        User32.INSTANCE.EnumWindows({ hwnd, pntr ->
-            if (isWindow(hwnd)) {
+        User32.INSTANCE.EnumWindows({ hWnd, _ ->
+            if (isWindow(hWnd)) {
                 // println(getTitle(hwnd))
 
-                val monitorHandle = User32.INSTANCE.MonitorFromWindow(hwnd, User32.MONITOR_DEFAULTTONEAREST)
+                val monitorHandle = User32.INSTANCE.MonitorFromWindow(hWnd, User32.MONITOR_DEFAULTTONEAREST)
                 if (getMonitorFromIndex(monitor) == monitorHandle) {
-                    windows.add(hwnd)
+                    windows.add(hWnd)
                 }
             }
 
@@ -135,10 +135,10 @@ object WindowUtil {
      * Gets the title of a window as a string
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun getTitle(hwnd: WinDef.HWND): String {
-        val length = User32.INSTANCE.GetWindowTextLength(hwnd) + 1
+    fun getTitle(hWnd: WinDef.HWND): String {
+        val length = User32.INSTANCE.GetWindowTextLength(hWnd) + 1
         val windowText = CharArray(length)
-        User32.INSTANCE.GetWindowText(hwnd, windowText, length)
+        User32.INSTANCE.GetWindowText(hWnd, windowText, length)
 
         return Native.toString(windowText)
     }
