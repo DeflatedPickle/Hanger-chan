@@ -30,44 +30,12 @@ fun main() {
 
     // 1.524
     // What do those numbers mean? I left that comment over a year ago with no context (16/03/2020)
-    val hangerChan = HangerChan(PhysicsUtil.world)
+    HangerChan
     logger.debug("Constructed Hanger-chan using the world")
-    window.add(hangerChan)
+    window.add(HangerChan)
     logger.info("Added the Hanger-chan widget to the window")
 
-    var collisionPoint = Vec2()
-    val collisions = object : ContactListener {
-        override fun endContact(contact: Contact) {
-            when (collisionPoint.y) {
-                -1f -> {
-                    hangerChan.onGround = contact.isTouching
-                    logger.debug("Hanger-chan left the ground")
-                }
-            }
-        }
-
-        override fun beginContact(contact: Contact) {
-            when (collisionPoint.y) {
-                -1f -> {
-                    hangerChan.onGround = contact.isTouching
-                    logger.debug("Hanger-chan hit the ground")
-                }
-            }
-        }
-
-        override fun preSolve(contact: Contact, oldManifold: Manifold) {
-            if (oldManifold.localNormal.x != 0f &&
-                    collisionPoint != oldManifold.localNormal) {
-                collisionPoint = oldManifold.localNormal
-                logger.debug("Hanger-chan collided on $collisionPoint")
-            }
-        }
-
-        override fun postSolve(contact: Contact, impulse: ContactImpulse) {
-            hangerChan.collisionSide = collisionPoint
-        }
-    }
-    PhysicsUtil.world.setContactListener(collisions)
+    PhysicsUtil.world.setContactListener(ContactAdapter)
     logger.debug("Added the collision listener")
 
     // Cursor
@@ -83,7 +51,7 @@ fun main() {
         if (counter % 12 == 0) {
             for (hWnd in WindowUtil.getAllWindows(0)) {
                 if (WindowUtil.getTitle(hWnd) !in WindowUtil.annoyingPrograms &&
-                        !hangerChan.windowList.any { it.hwnd == hWnd }) {
+                        !HangerChan.windowList.any { it.hwnd == hWnd }) {
                     logger.info("Added ${WindowUtil.getTitle(hWnd)} to Hanger-chan's windows")
                     openWindows.add(hWnd)
 
@@ -108,17 +76,17 @@ fun main() {
                     val internalBodyList = mutableListOf<Body>()
                     BorderUtil.createAllWindowBorders(internalBodyList, PhysicsUtil.world, x, y, width, height)
 
-                    hangerChan.windowList.add(NativeWindow(hWnd, rect, body, internalBodyList))
+                    HangerChan.windowList.add(NativeWindow(hWnd, rect, body, internalBodyList))
                 }
             }
 
             for (i in openWindows) {
-                if (WindowUtil.getTitle(i) == "" && hangerChan.windowList.map { it.hwnd }.contains(i)) {
+                if (WindowUtil.getTitle(i).isEmpty() && HangerChan.windowList.map { it.hwnd }.contains(i)) {
                     logger.info("Removed a window from Hanger-chan's windows")
 
-                    for (w in hangerChan.windowList) {
+                    for (w in HangerChan.windowList) {
                         if (w.hwnd == i) {
-                            hangerChan.windowList.remove(w)
+                            HangerChan.windowList.remove(w)
                         }
                     }
                 }
@@ -129,10 +97,10 @@ fun main() {
             PhysicsUtil.world.step(1f / 60f, 1, 1)
             // logger.info("Increased the PhysicsUtil.world step")
 
-            hangerChan.animate()
+            HangerChan.animate()
         }
 
-        for (nativeWindow in hangerChan.windowList) {
+        for (nativeWindow in HangerChan.windowList) {
             val rect = WinDef.RECT()
             User32.INSTANCE.GetWindowRect(nativeWindow.hwnd, rect)
 
@@ -144,30 +112,15 @@ fun main() {
                 val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
                 val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
 
-                nativeWindow.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
-                (nativeWindow.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
-
-                nativeWindow.internalBodyList[0].setTransform(Vec2(x, -y - height / 2), 0f)
-                (nativeWindow.internalBodyList[0].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
-
-                nativeWindow.internalBodyList[1].setTransform(Vec2(x + width, -y - height / 2), 0f)
-                (nativeWindow.internalBodyList[1].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)
-
-                nativeWindow.internalBodyList[2].setTransform(Vec2(x + width / 2, -y), 0f)
-                (nativeWindow.internalBodyList[2].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
-
-                nativeWindow.internalBodyList[3].setTransform(Vec2(x + width / 2, -y - height), 0f)
-                (nativeWindow.internalBodyList[3].fixtureList.shape as PolygonShape).setAsBox(width / 2, 0f)
-
+                nativeWindow.moveTo(x, y, width, height)
                 nativeWindow.lastUnits = rect
 
                 logger.info("Repositioned the body for ${WindowUtil.getTitle(nativeWindow.hwnd)}")
             }
         }
 
-        CursorUtil.update(hangerChan)
-
-        hangerChan.repaint()
+        CursorUtil.update(HangerChan)
+        HangerChan.repaint()
     })
     timer.start()
     logger.info("Started the animation and window detection timer")
@@ -176,6 +129,6 @@ fun main() {
     window.isVisible = true
     logger.debug("Made the window visible")
 
-    BorderUtil.createAllMonitorBorders(hangerChan.borders, PhysicsUtil.world)
+    BorderUtil.createAllMonitorBorders(HangerChan.borders, PhysicsUtil.world)
     logger.debug("Created monitor borders")
 }

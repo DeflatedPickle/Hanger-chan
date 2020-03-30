@@ -26,9 +26,7 @@ import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.BodyType
 import org.jbox2d.dynamics.World
 
-class HangerChan(
-        world: World
-) : JPanel() {
+object HangerChan : JPanel() {
     private val logger = LogManager.getLogger(HangerChan::class.simpleName)
 
     val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
@@ -36,7 +34,7 @@ class HangerChan(
 
     var beingControlled = false
 
-    val body = world.createBody(BodyDef().apply {
+    val body = PhysicsUtil.world.createBody(BodyDef().apply {
         type = BodyType.DYNAMIC
         position.set(20f, -10f)
         fixedRotation = true
@@ -72,43 +70,33 @@ class HangerChan(
 
     var onGround = false
 
-    // Changes when the mouse is clicked -- used to determine thrown force
-    var clickedX = 0f
-    var clickedY = 0f
-    var releasedX = 0f
-    var releasedY = 0f
-
-    // Changes when the mouse is moved
-    var mouseX = 0f
-    var mouseY = 0f
-
     init {
         isOpaque = false
 
         ApplicationWindow.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
                 // If inside Hanger-chan
-                if (mouseX > body.position.x - sheet.spriteWidth / 2 && mouseX < body.position.x + sheet.spriteWidth / 2 &&
-                        mouseY > body.position.y - sheet.spriteHeight / 2 && mouseY < body.position.y + sheet.spriteHeight / 2) {
+                if (Cursor.mouseX > body.position.x - sheet.spriteWidth / 2 && Cursor.mouseX < body.position.x + sheet.spriteWidth / 2 &&
+                        Cursor.mouseY > body.position.y - sheet.spriteHeight / 2 && Cursor.mouseY < body.position.y + sheet.spriteHeight / 2) {
                     isGrabbed = true
 
-                    clickedX = e.xOnScreen * PhysicsUtil.scaleDown
-                    clickedY = e.yOnScreen * PhysicsUtil.scaleDown
+                    Cursor.clickedX = e.xOnScreen * PhysicsUtil.scaleDown
+                    Cursor.clickedY = e.yOnScreen * PhysicsUtil.scaleDown
                 }
             }
 
             override fun mouseReleased(e: MouseEvent) {
                 if (isGrabbed) {
-                    releasedX = e.xOnScreen * PhysicsUtil.scaleDown
-                    releasedY = e.yOnScreen * PhysicsUtil.scaleDown
+                    Cursor.releasedX = e.xOnScreen * PhysicsUtil.scaleDown
+                    Cursor.releasedY = e.yOnScreen * PhysicsUtil.scaleDown
 
                     // TODO: Drag over desktop to reset the embedded window
                     for (nativeWindow in windowList) {
                         if (nativeWindow.hwnd != embeddedWindow &&
-                                mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
-                                mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
-                                mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
-                                mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
+                                Cursor.mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
+                                Cursor.mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
+                                Cursor.mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
+                                Cursor.mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
                             embeddedWindow = nativeWindow.hwnd
                             nativeWindow.body.isActive = false
@@ -126,7 +114,7 @@ class HangerChan(
                         val list = mutableListOf<Boolean>()
 
                         for (nativeWindow in windowList) {
-                            if (!nativeWindow.lastUnits.isInside(mouseX, mouseY, PhysicsUtil.scaleUp)) {
+                            if (!nativeWindow.lastUnits.isInside(Cursor.mouseX, Cursor.mouseY, PhysicsUtil.scaleUp)) {
                                 list.add(false)
                             } else {
                                 list.add(true)
@@ -146,8 +134,8 @@ class HangerChan(
             }
 
             override fun mouseDragged(e: MouseEvent) {
-                mouseX = e.xOnScreen * PhysicsUtil.scaleDown
-                mouseY = e.yOnScreen * PhysicsUtil.scaleDown
+                Cursor.mouseX = e.xOnScreen * PhysicsUtil.scaleDown
+                Cursor.mouseY = e.yOnScreen * PhysicsUtil.scaleDown
 
                 if (isGrabbed) {
                     isBeingPulled = true
@@ -193,7 +181,7 @@ class HangerChan(
         }
 
         if (beingControlled) {
-            currentAction.manual(this)
+            currentAction.manual()
         } else {
             when (collisionSide?.x) {
                 // Left
@@ -208,10 +196,10 @@ class HangerChan(
                 }
             }
 
-            if (body.linearVelocity.y < -1 && clickedY == 0f || currentAction == Action.Thrown) {
+            if (body.linearVelocity.y < -1 && Cursor.clickedY == 0f || currentAction == Action.Thrown) {
                 currentAction = Action.Falling
                 justFell = true
-            } else if (clickedY != 0f) {
+            } else if (Cursor.clickedY != 0f) {
                 currentAction = Action.Thrown
             } else {
                 if (justFell) {
@@ -224,7 +212,7 @@ class HangerChan(
                 currentAction = Action.Grabbed
             }
 
-            currentAction.automatic(this)
+            currentAction.automatic()
         }
     }
 
@@ -280,10 +268,10 @@ class HangerChan(
                 }
 
                 if (isGrabbed) {
-                    if (mouseX * PhysicsUtil.scaleUp > w.lastUnits.left &&
-                            mouseX * PhysicsUtil.scaleUp < w.lastUnits.right &&
-                            mouseY * PhysicsUtil.scaleUp > w.lastUnits.top &&
-                            mouseY * PhysicsUtil.scaleUp < w.lastUnits.bottom) {
+                    if (Cursor.mouseX * PhysicsUtil.scaleUp > w.lastUnits.left &&
+                            Cursor.mouseX * PhysicsUtil.scaleUp < w.lastUnits.right &&
+                            Cursor.mouseY * PhysicsUtil.scaleUp > w.lastUnits.top &&
+                            Cursor.mouseY * PhysicsUtil.scaleUp < w.lastUnits.bottom) {
                         g2D.color = Color.CYAN
                         g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
                         PhysicsUtil.drawWindowFill(g2D, w.body)
