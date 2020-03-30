@@ -71,10 +71,9 @@ fun main() {
     logger.debug("Added the collision listener")
 
     // Cursor
-    val cursorBody = CursorUtil.createBody(PhysicsUtil.world)
+    Cursor
     logger.debug("Created the cursor body")
-    CursorUtil.body = cursorBody
-    hangerChan.cursor = cursorBody
+
     var counter = 0
     val openWindows = mutableListOf<WinDef.HWND>()
     val timer = Timer(1000 / 144 * 4, ActionListener {
@@ -107,7 +106,7 @@ fun main() {
                     }
 
                     val internalBodyList = mutableListOf<Body>()
-                    BorderUtil.createAllBorders(internalBodyList, PhysicsUtil.world)
+                    BorderUtil.createAllWindowBorders(internalBodyList, PhysicsUtil.world, x, y, width, height)
 
                     hangerChan.windowList.add(NativeWindow(hWnd, rect, body, internalBodyList))
                 }
@@ -177,6 +176,6 @@ fun main() {
     window.isVisible = true
     logger.debug("Made the window visible")
 
-    BorderUtil.createAllBorders(hangerChan.borders, PhysicsUtil.world)
+    BorderUtil.createAllMonitorBorders(hangerChan.borders, PhysicsUtil.world)
     logger.debug("Created monitor borders")
 }

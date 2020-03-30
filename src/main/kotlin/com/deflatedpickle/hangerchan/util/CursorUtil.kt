@@ -2,6 +2,7 @@
 
 package com.deflatedpickle.hangerchan.util
 
+import com.deflatedpickle.hangerchan.Cursor
 import com.deflatedpickle.hangerchan.HangerChan
 import com.deflatedpickle.jna.User32Extended
 import com.sun.jna.platform.win32.User32
@@ -18,8 +19,6 @@ object CursorUtil {
     val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
     val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
 
-    lateinit var body: Body
-
     init {
         User32.INSTANCE.GetCursorPos(cursorLocation)
     }
@@ -30,12 +29,12 @@ object CursorUtil {
         // TODO: Get the size of the current cursor instead of the constant size
         val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
         val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
-        body.setTransform(Vec2(
+        Cursor.body.setTransform(Vec2(
                 (cursorLocation.x.toFloat() + cursorWidth / 4) * PhysicsUtil.scaleDown,
                 -(cursorLocation.y.toFloat() + cursorHeight / 4) * PhysicsUtil.scaleDown
         ), 0f)
-        (body.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
-        body.isActive = User32.INSTANCE.GetAsyncKeyState(User32Extended.VK_LBUTTON) < 0 && !hangerChan.isGrabbed
+        (Cursor.body.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
+        Cursor.body.isActive = User32.INSTANCE.GetAsyncKeyState(User32Extended.VK_LBUTTON) < 0 && !hangerChan.isGrabbed
     }
 
     fun createBody(world: World): Body =

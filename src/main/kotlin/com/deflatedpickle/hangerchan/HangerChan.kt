@@ -52,7 +52,6 @@ class HangerChan(
 
     var borders: MutableList<Body> = mutableListOf()
     var windowList: MutableSet<NativeWindow> = mutableSetOf()
-    var cursor: Body? = null
 
     var isEmbedded = false
     var embeddedWindow: WinDef.HWND = User32.INSTANCE.GetDesktopWindow()
@@ -129,8 +128,7 @@ class HangerChan(
                         for (nativeWindow in windowList) {
                             if (!nativeWindow.lastUnits.isInside(mouseX, mouseY, PhysicsUtil.scaleUp)) {
                                 list.add(false)
-                            }
-                            else {
+                            } else {
                                 list.add(true)
                             }
                         }
@@ -264,14 +262,12 @@ class HangerChan(
             }
         }
 
-        if (cursor != null) {
-            if (cursor!!.isActive) {
-                g2D.color = Color.CYAN
-            } else {
-                g2D.color = Color.BLACK
-            }
-            PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
+        if (Cursor.body.isActive) {
+            g2D.color = Color.CYAN
+        } else {
+            g2D.color = Color.BLACK
         }
+        PhysicsUtil.drawPhysicsShape(g2D, Cursor.body)
 
         if (windowList.isNotEmpty()) {
             for (w in windowList) {
