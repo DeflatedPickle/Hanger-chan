@@ -51,7 +51,7 @@ class HangerChan(
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windowMap: MutableMap<WinDef.HWND, NativeWindow> = mutableMapOf()
+    var windowList: MutableSet<NativeWindow> = mutableSetOf()
     var cursor: Body? = null
 
     var isEmbedded = false
@@ -104,14 +104,14 @@ class HangerChan(
                     releasedY = e.yOnScreen * PhysicsUtil.scaleDown
 
                     // TODO: Drag over desktop to reset the embedded window
-                    for ((hWnd, nativeWindow) in windowMap) {
-                        if (hWnd != embeddedWindow &&
+                    for (nativeWindow in windowList) {
+                        if (nativeWindow.hwnd != embeddedWindow &&
                                 mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
                                 mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
                                 mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
                                 mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
-                            embeddedWindow = hWnd
+                            embeddedWindow = nativeWindow.hwnd
                             nativeWindow.body.isActive = false
 
                             logger.info("Placed Hanger-chan inside ${WindowUtil.getTitle(embeddedWindow!!)}")
@@ -126,7 +126,7 @@ class HangerChan(
                     with(User32.INSTANCE.GetDesktopWindow()) {
                         val list = mutableListOf<Boolean>()
 
-                        for ((_, nativeWindow) in windowMap) {
+                        for (nativeWindow in windowList) {
                             if (!nativeWindow.lastUnits.isInside(mouseX, mouseY, PhysicsUtil.scaleUp)) {
                                 list.add(false)
                             }
@@ -273,10 +273,10 @@ class HangerChan(
             PhysicsUtil.drawPhysicsShape(g2D, cursor!!)
         }
 
-        if (windowMap.isNotEmpty()) {
-            for (w in windowMap) {
-                if (embeddedWindow == w.key) {
-                    for (ww in w.value.internalBodyList) {
+        if (windowList.isNotEmpty()) {
+            for (w in windowList) {
+                if (embeddedWindow == w.hwnd) {
+                    for (ww in w.internalBodyList) {
                         g2D.color = Color.PINK
                         g2D.stroke = BasicStroke(8f)
                         PhysicsUtil.drawPhysicsShape(g2D, ww)
@@ -284,21 +284,21 @@ class HangerChan(
                 }
 
                 if (isGrabbed) {
-                    if (mouseX * PhysicsUtil.scaleUp > w.value.lastUnits.left &&
-                            mouseX * PhysicsUtil.scaleUp < w.value.lastUnits.right &&
-                            mouseY * PhysicsUtil.scaleUp > w.value.lastUnits.top &&
-                            mouseY * PhysicsUtil.scaleUp < w.value.lastUnits.bottom) {
+                    if (mouseX * PhysicsUtil.scaleUp > w.lastUnits.left &&
+                            mouseX * PhysicsUtil.scaleUp < w.lastUnits.right &&
+                            mouseY * PhysicsUtil.scaleUp > w.lastUnits.top &&
+                            mouseY * PhysicsUtil.scaleUp < w.lastUnits.bottom) {
                         g2D.color = Color.CYAN
                         g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
-                        PhysicsUtil.drawWindowFill(g2D, w.value.body)
+                        PhysicsUtil.drawWindowFill(g2D, w.body)
                         break
                     }
                 }
             }
 
-            for (window in windowMap) {
+            for (window in windowList) {
                 g2D.stroke = BasicStroke(2f)
-                PhysicsUtil.drawWindowShape(window.key, g2D, window.value.body)
+                PhysicsUtil.drawWindowShape(window.hwnd, g2D, window.body)
             }
         }
     }

@@ -21,7 +21,7 @@ import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.contacts.Contact
 
 @Suppress("KDocMissingDocumentation")
-fun main(args: Array<String>) {
+fun main() {
     System.setProperty("log4j.skipJansi", "false")
     val logger = LogManager.getLogger("Main")
     val window = ApplicationWindow
@@ -83,13 +83,8 @@ fun main(args: Array<String>) {
         // Check if there are any new windows
         if (counter % 12 == 0) {
             for (hWnd in WindowUtil.getAllWindows(0)) {
-                // I think these programs open on start-up and fail the window check, even when you haven't used them
-                // So they have a window border, so
-                // TODO: Figure out why these programs behave like this and find more examples that act like this
-                // More examples might help to find out why they behave like this
-                val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
-                if (WindowUtil.getTitle(hWnd) !in annoyingPrograms &&
-                        !hangerChan.windowMap.containsKey(hWnd)) {
+                if (WindowUtil.getTitle(hWnd) !in WindowUtil.annoyingPrograms &&
+                        !hangerChan.windowList.any { it.hwnd == hWnd }) {
                     logger.info("Added ${WindowUtil.getTitle(hWnd)} to Hanger-chan's windows")
                     openWindows.add(hWnd)
 
@@ -112,51 +107,21 @@ fun main(args: Array<String>) {
                     }
 
                     val internalBodyList = mutableListOf<Body>()
+                    BorderUtil.createAllBorders(internalBodyList, PhysicsUtil.world)
 
-                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
-                        position.set(x, -y - height / 2)
-                    }).apply {
-                        isActive = false
-                        createFixture(PolygonShape().apply {
-                            setAsBox(0f, height / 2)
-                        }, 0f)
-                    })
-
-                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
-                        position.set(x + width, -y - height / 2)
-                    }).apply {
-                        isActive = false
-                        createFixture(PolygonShape().apply {
-                            setAsBox(0f, height / 2)
-                        }, 0f)
-                    })
-
-                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
-                        position.set(x + width / 2, -y)
-                    }).apply {
-                        isActive = false
-                        createFixture(PolygonShape().apply {
-                            setAsBox(width / 2, 0f)
-                        }, 0f)
-                    })
-
-                    internalBodyList.add(PhysicsUtil.world.createBody(BodyDef().apply {
-                        position.set(x + width / 2, -y - height)
-                    }).apply {
-                        isActive = false
-                        createFixture(PolygonShape().apply {
-                            setAsBox(width / 2, 0f)
-                        }, 0f)
-                    })
-
-                    hangerChan.windowMap[hWnd] = NativeWindow(hWnd, rect, body, internalBodyList)
+                    hangerChan.windowList.add(NativeWindow(hWnd, rect, body, internalBodyList))
                 }
             }
 
             for (i in openWindows) {
-                if (WindowUtil.getTitle(i) == "" && hangerChan.windowMap.keys.contains(i)) {
+                if (WindowUtil.getTitle(i) == "" && hangerChan.windowList.map { it.hwnd }.contains(i)) {
                     logger.info("Removed a window from Hanger-chan's windows")
-                    hangerChan.windowMap.remove(i)
+
+                    for (w in hangerChan.windowList) {
+                        if (w.hwnd == i) {
+                            hangerChan.windowList.remove(w)
+                        }
+                    }
                 }
             }
         }
@@ -168,9 +133,9 @@ fun main(args: Array<String>) {
             hangerChan.animate()
         }
 
-        for ((hWnd, nativeWindow) in hangerChan.windowMap) {
+        for (nativeWindow in hangerChan.windowList) {
             val rect = WinDef.RECT()
-            User32.INSTANCE.GetWindowRect(hWnd, rect)
+            User32.INSTANCE.GetWindowRect(nativeWindow.hwnd, rect)
 
             // Check if the positions are the same before moving the collision box
             // Occasionally fails, leaving the box far away from the window, don't know why
@@ -197,7 +162,7 @@ fun main(args: Array<String>) {
 
                 nativeWindow.lastUnits = rect
 
-                logger.info("Repositioned the body for ${WindowUtil.getTitle(hWnd)}")
+                logger.info("Repositioned the body for ${WindowUtil.getTitle(nativeWindow.hwnd)}")
             }
         }
 
@@ -212,6 +177,6 @@ fun main(args: Array<String>) {
     window.isVisible = true
     logger.debug("Made the window visible")
 
-    BorderUtil.createAllBorders(hangerChan, PhysicsUtil.world)
+    BorderUtil.createAllBorders(hangerChan.borders, PhysicsUtil.world)
     logger.debug("Created monitor borders")
 }

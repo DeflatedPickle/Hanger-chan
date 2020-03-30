@@ -37,6 +37,12 @@ object WindowUtil {
 
     val mousePointerLocation = Vector2i()
 
+    // I think these programs open on start-up and fail the window check, even when you haven't used them
+    // So they have a window border, so
+    // TODO: Figure out why these programs behave like this and find more examples that act like this
+    // More examples might help to find out why they behave like this
+    val annoyingPrograms = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
+
     init {
         for (ph in ProcessHandle.allProcesses()) {
             // println("ID: ${ph.pid()} | Command: ${ph.info().command()} | Parent: ${ph.parent()}")
