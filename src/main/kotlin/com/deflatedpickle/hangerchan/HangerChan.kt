@@ -3,8 +3,8 @@
 package com.deflatedpickle.hangerchan
 
 import com.deflatedpickle.hangerchan.extensions.isInside
-import com.deflatedpickle.hangerchan.util.PhysicsUtil
-import com.deflatedpickle.hangerchan.util.WindowUtil
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
 import org.apache.logging.log4j.LogManager
@@ -24,7 +24,6 @@ import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.BodyType
-import org.jbox2d.dynamics.World
 
 object HangerChan : JPanel() {
     private val logger = LogManager.getLogger(HangerChan::class.simpleName)
@@ -92,16 +91,16 @@ object HangerChan : JPanel() {
 
                     // TODO: Drag over desktop to reset the embedded window
                     for (nativeWindow in windowList) {
-                        if (nativeWindow.hwnd != embeddedWindow &&
+                        if (nativeWindow.hWnd != embeddedWindow &&
                                 Cursor.mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
                                 Cursor.mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
                                 Cursor.mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
                                 Cursor.mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
-                            embeddedWindow = nativeWindow.hwnd
+                            embeddedWindow = nativeWindow.hWnd
                             nativeWindow.body.isActive = false
 
-                            logger.info("Placed Hanger-chan inside ${WindowUtil.getTitle(embeddedWindow!!)}")
+                            logger.info("Placed Hanger-chan inside ${Win32WindowUtil.getTitle(embeddedWindow!!)}")
 
                             for (i in nativeWindow.internalBodyList) {
                                 i.isActive = true
@@ -237,7 +236,7 @@ object HangerChan : JPanel() {
 
         g2D.color = Color.RED
         PhysicsUtil.drawPhysicsShape(g2D, body)
-        val title = WindowUtil.getTitle(embeddedWindow)
+        val title = Win32WindowUtil.getTitle(embeddedWindow)
         PhysicsUtil.drawText(g2D, "Placed In: ${if (title != "") title else "Desktop"}", body, yIncrease = -1.4f)
         PhysicsUtil.drawText(g2D, "X: ${"%.1f".format(body.position.x)}", body)
         PhysicsUtil.drawText(g2D, "Y: ${"%.1f".format(body.position.y)}", body, yIncrease = 1.4f)
@@ -259,7 +258,7 @@ object HangerChan : JPanel() {
 
         if (windowList.isNotEmpty()) {
             for (w in windowList) {
-                if (embeddedWindow == w.hwnd) {
+                if (embeddedWindow == w.hWnd) {
                     for (ww in w.internalBodyList) {
                         g2D.color = Color.PINK
                         g2D.stroke = BasicStroke(8f)
@@ -282,7 +281,7 @@ object HangerChan : JPanel() {
 
             for (window in windowList) {
                 g2D.stroke = BasicStroke(2f)
-                PhysicsUtil.drawWindowShape(window.hwnd, g2D, window.body)
+                PhysicsUtil.drawWindowShape(window.hWnd, g2D, window.body)
             }
         }
     }

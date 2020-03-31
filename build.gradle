@@ -45,6 +45,9 @@ dependencies {
     // Terminal Colours
     compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.18'
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.2.51"
+
+    // Events
+    compile group: 'com.github.Fylipp', name: 'easy-events', version: 'v1.1.0'
 }
 
 compileKotlin {

@@ -1,7 +1,8 @@
 /* Copyright (c) 2020 DeflatedPickle under the MIT license */
 
-package com.deflatedpickle.hangerchan.util
+package com.deflatedpickle.hangerchan.util.physics
 
+import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.sun.jna.platform.win32.WinDef
 import org.apache.logging.log4j.LogManager
 import java.awt.Color
@@ -82,7 +83,7 @@ object PhysicsUtil {
         val x = body.transform.p.x
         val y = body.transform.p.y
 
-        val title = WindowUtil.getTitle(hwnd)
+        val title = Win32WindowUtil.getTitle(hwnd)
 
         val originalFont = graphics2D.font
         graphics2D.font = Font(originalFont.fontName, Font.BOLD, 14)

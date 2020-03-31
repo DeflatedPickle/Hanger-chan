@@ -2,23 +2,17 @@
 
 package com.deflatedpickle.hangerchan
 
-import com.deflatedpickle.hangerchan.util.BorderUtil
-import com.deflatedpickle.hangerchan.util.CursorUtil
-import com.deflatedpickle.hangerchan.util.PhysicsUtil
+import com.deflatedpickle.hangerchan.event.WindowCloseEvent
+import com.deflatedpickle.hangerchan.event.WindowMoveEvent
+import com.deflatedpickle.hangerchan.event.WindowOpenEvent
+import com.deflatedpickle.hangerchan.util.physics.BorderUtil
+import com.deflatedpickle.hangerchan.util.win32.CursorUtil
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.deflatedpickle.hangerchan.util.WindowUtil
-import com.sun.jna.platform.win32.User32
-import com.sun.jna.platform.win32.WinDef
 import java.awt.event.ActionListener
 import javax.swing.Timer
 import org.apache.logging.log4j.LogManager
-import org.jbox2d.callbacks.ContactImpulse
-import org.jbox2d.callbacks.ContactListener
-import org.jbox2d.collision.Manifold
-import org.jbox2d.collision.shapes.PolygonShape
-import org.jbox2d.common.Vec2
-import org.jbox2d.dynamics.Body
-import org.jbox2d.dynamics.BodyDef
-import org.jbox2d.dynamics.contacts.Contact
 
 @Suppress("KDocMissingDocumentation")
 fun main() {
@@ -43,50 +37,24 @@ fun main() {
     logger.debug("Created the cursor body")
 
     var counter = 0
-    val openWindows = mutableListOf<WinDef.HWND>()
     val timer = Timer(1000 / 144 * 4, ActionListener {
         counter++
 
         // Check if there are any new windows
         if (counter % 12 == 0) {
-            for (hWnd in WindowUtil.getAllWindows(0)) {
-                if (WindowUtil.getTitle(hWnd) !in WindowUtil.annoyingPrograms &&
-                        !HangerChan.windowList.any { it.hwnd == hWnd }) {
-                    logger.info("Added ${WindowUtil.getTitle(hWnd)} to Hanger-chan's windows")
-                    openWindows.add(hWnd)
-
-                    val rect = WinDef.RECT()
-                    User32.INSTANCE.GetWindowRect(hWnd, rect)
-
-                    val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-                    val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-                    val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-                    val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
-
-                    // println("X: $x, Y: $y, Width: $width, Height: $height")
-
-                    val body = PhysicsUtil.world.createBody(BodyDef().apply {
-                        position.set(x + width / 2, -y - height / 2)
-                    }).apply {
-                        createFixture(PolygonShape().apply {
-                            setAsBox(width / 2, height / 2)
-                        }, 0f)
-                    }
-
-                    val internalBodyList = mutableListOf<Body>()
-                    BorderUtil.createAllWindowBorders(internalBodyList, PhysicsUtil.world, x, y, width, height)
-
-                    HangerChan.windowList.add(NativeWindow(hWnd, rect, body, internalBodyList))
+            for (hWnd in Win32WindowUtil.getAllWindows(0)) {
+                if (Win32WindowUtil.getTitle(hWnd) !in WindowUtil.annoyingPrograms &&
+                        !HangerChan.windowList.any { it.hWnd == hWnd }) {
+                    WindowOpenEvent.trigger(hWnd)
                 }
             }
 
-            for (i in openWindows) {
-                if (WindowUtil.getTitle(i).isEmpty() && HangerChan.windowList.map { it.hwnd }.contains(i)) {
-                    logger.info("Removed a window from Hanger-chan's windows")
+            for (i in WindowUtil.openWindows) {
+                if (Win32WindowUtil.getTitle(i).isEmpty() && HangerChan.windowList.map { it.hWnd }.contains(i)) {
 
                     for (w in HangerChan.windowList) {
-                        if (w.hwnd == i) {
-                            HangerChan.windowList.remove(w)
+                        if (w.hWnd == i) {
+                            WindowCloseEvent.trigger(w)
                         }
                     }
                 }
@@ -101,21 +69,13 @@ fun main() {
         }
 
         for (nativeWindow in HangerChan.windowList) {
-            val rect = WinDef.RECT()
-            User32.INSTANCE.GetWindowRect(nativeWindow.hwnd, rect)
+            val rect = Win32WindowUtil.getRect(nativeWindow.hWnd)
 
             // Check if the positions are the same before moving the collision box
             // Occasionally fails, leaving the box far away from the window, don't know why
             if (nativeWindow.lastUnits.top != rect.top && nativeWindow.lastUnits.bottom != rect.bottom && nativeWindow.lastUnits.left != rect.left && nativeWindow.lastUnits.right != rect.right) {
-                val x = rect.left.toFloat() * PhysicsUtil.scaleDown
-                val y = rect.top.toFloat() * PhysicsUtil.scaleDown
-                val width = (rect.right.toFloat() * PhysicsUtil.scaleDown) - x
-                val height = (rect.bottom.toFloat() * PhysicsUtil.scaleDown) - y
-
-                nativeWindow.moveTo(x, y, width, height)
-                nativeWindow.lastUnits = rect
-
-                logger.info("Repositioned the body for ${WindowUtil.getTitle(nativeWindow.hwnd)}")
+                nativeWindow.newUnits = rect
+                WindowMoveEvent.trigger(nativeWindow)
             }
         }
 

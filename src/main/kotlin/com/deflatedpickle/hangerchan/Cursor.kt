@@ -1,7 +1,7 @@
 package com.deflatedpickle.hangerchan
 
-import com.deflatedpickle.hangerchan.util.CursorUtil
-import com.deflatedpickle.hangerchan.util.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.win32.CursorUtil
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 
 object Cursor {
     val body = CursorUtil.createBody(PhysicsUtil.world)

@@ -1,9 +1,10 @@
 /* Copyright (c) 2020 DeflatedPickle under the MIT license */
 
-package com.deflatedpickle.hangerchan.util
+package com.deflatedpickle.hangerchan.util.win32
 
 import com.deflatedpickle.hangerchan.Cursor
 import com.deflatedpickle.hangerchan.HangerChan
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.deflatedpickle.jna.User32Extended
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef

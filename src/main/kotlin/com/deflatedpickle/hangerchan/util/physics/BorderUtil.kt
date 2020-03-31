@@ -1,7 +1,8 @@
 /* Copyright (c) 2020 DeflatedPickle under the MIT license */
 
-package com.deflatedpickle.hangerchan.util
+package com.deflatedpickle.hangerchan.util.physics
 
+import com.deflatedpickle.hangerchan.util.win32.MonitorUtil
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
@@ -9,10 +10,10 @@ import org.jbox2d.dynamics.World
 
 object BorderUtil {
     fun createAllMonitorBorders(borders: MutableList<Body>, world: World) {
-        this.createTopMonitorBorder(borders, world, MonitorUtil.monitorWidth)
-        this.createBottomMonitorBorder(borders, world, MonitorUtil.monitorWidth, MonitorUtil.monitorHeight)
-        this.createLeftMonitorBorder(borders, world, MonitorUtil.monitorHeight)
-        this.createRightMonitorBorder(borders, world, MonitorUtil.monitorWidth, MonitorUtil.monitorHeight)
+        createTopMonitorBorder(borders, world, MonitorUtil.monitorWidth)
+        createBottomMonitorBorder(borders, world, MonitorUtil.monitorWidth, MonitorUtil.monitorHeight)
+        createLeftMonitorBorder(borders, world, MonitorUtil.monitorHeight)
+        createRightMonitorBorder(borders, world, MonitorUtil.monitorWidth, MonitorUtil.monitorHeight)
     }
 
     fun createTopMonitorBorder(borders: MutableList<Body>, world: World, width: Float) {
@@ -56,10 +57,10 @@ object BorderUtil {
     }
 
     fun createAllWindowBorders(borders: MutableList<Body>, world: World, x: Float, y: Float, width: Float, height: Float) {
-        this.createTopWindowBorder(borders, world, x, y, height, width)
-        this.createBottomWindowBorder(borders, world, x, y, width, height)
-        this.createLeftWindowBorder(borders, world, x, y, width, height)
-        this.createRightWindowBorder(borders, world, x, y, width, height)
+        createTopWindowBorder(borders, world, x, y, height, width)
+        createBottomWindowBorder(borders, world, x, y, width, height)
+        createLeftWindowBorder(borders, world, x, y, width, height)
+        createRightWindowBorder(borders, world, x, y, width, height)
     }
 
     fun createTopWindowBorder(borders: MutableList<Body>, world: World, x: Float, y: Float, height: Float, width: Float) {
