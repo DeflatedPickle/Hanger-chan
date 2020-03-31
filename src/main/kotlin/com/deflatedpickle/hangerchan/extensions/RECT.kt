@@ -1,3 +1,5 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan.extensions
 
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil

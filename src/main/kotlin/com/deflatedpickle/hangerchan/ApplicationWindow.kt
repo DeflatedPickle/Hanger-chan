@@ -15,6 +15,6 @@ object ApplicationWindow : JFrame("Hanger-chan") {
 
         this.background = Color(0, 0, 0, 0)
 
-        this.extendedState = JFrame.MAXIMIZED_BOTH
+        this.extendedState = MAXIMIZED_BOTH
     }
 }

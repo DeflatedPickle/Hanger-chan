@@ -4,10 +4,10 @@ package com.deflatedpickle.hangerchan.util.physics
 
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.sun.jna.platform.win32.WinDef
-import org.apache.logging.log4j.LogManager
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
+import org.apache.logging.log4j.LogManager
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body

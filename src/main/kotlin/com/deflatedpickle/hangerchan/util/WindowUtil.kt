@@ -1,3 +1,5 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan.util
 
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
@@ -39,5 +41,4 @@ object WindowUtil {
                     setAsBox(rect.width / 2, rect.height / 2)
                 }, 0f)
             }
-
 }

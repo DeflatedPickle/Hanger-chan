@@ -8,11 +8,11 @@ import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 
 class NativeWindow(
-        val hWnd: WinDef.HWND,
-        var lastUnits: WinDef.RECT,
-        var newUnits: WinDef.RECT,
-        val body: Body,
-        val internalBodyList: MutableList<Body>
+    val hWnd: WinDef.HWND,
+    var lastUnits: WinDef.RECT,
+    var newUnits: WinDef.RECT,
+    val body: Body,
+    val internalBodyList: MutableList<Body>
 ) {
     fun moveTo(x: Float, y: Float, width: Float, height: Float) {
         this.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)

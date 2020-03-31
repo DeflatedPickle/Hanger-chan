@@ -1,7 +1,9 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan
 
-import com.deflatedpickle.hangerchan.util.win32.CursorUtil
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.win32.CursorUtil
 
 object Cursor {
     val body = CursorUtil.createBody(PhysicsUtil.world)

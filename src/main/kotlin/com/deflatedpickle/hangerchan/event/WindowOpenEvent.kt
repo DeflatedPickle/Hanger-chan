@@ -1,3 +1,5 @@
+/* Copyright (c) 2020 DeflatedPickle under the MIT license */
+
 package com.deflatedpickle.hangerchan.event
 
 import com.deflatedpickle.hangerchan.HangerChan
@@ -6,11 +8,8 @@ import com.deflatedpickle.hangerchan.util.WindowUtil
 import com.deflatedpickle.hangerchan.util.physics.BorderUtil
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
-import com.pploder.events.SimpleEvent
 import com.sun.jna.platform.win32.WinDef
-import org.apache.logging.log4j.LogManager
 import org.jbox2d.dynamics.Body
-import java.util.function.Consumer
 
 object WindowOpenEvent : AbstractEvent<WinDef.HWND>() {
     init {

@@ -5,11 +5,11 @@ package com.deflatedpickle.hangerchan
 import com.deflatedpickle.hangerchan.event.WindowCloseEvent
 import com.deflatedpickle.hangerchan.event.WindowMoveEvent
 import com.deflatedpickle.hangerchan.event.WindowOpenEvent
-import com.deflatedpickle.hangerchan.util.physics.BorderUtil
-import com.deflatedpickle.hangerchan.util.win32.CursorUtil
-import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
-import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.deflatedpickle.hangerchan.util.WindowUtil
+import com.deflatedpickle.hangerchan.util.physics.BorderUtil
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
+import com.deflatedpickle.hangerchan.util.win32.CursorUtil
+import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import java.awt.event.ActionListener
 import javax.swing.Timer
 import org.apache.logging.log4j.LogManager
@@ -18,7 +18,7 @@ import org.apache.logging.log4j.LogManager
 fun main() {
     System.setProperty("log4j.skipJansi", "false")
     val logger = LogManager.getLogger("Main")
-    val window = ApplicationWindow
+    ApplicationWindow
 
     logger.info("Launched Hanger-chan")
 
@@ -26,7 +26,7 @@ fun main() {
     // What do those numbers mean? I left that comment over a year ago with no context (16/03/2020)
     HangerChan
     logger.debug("Constructed Hanger-chan using the world")
-    window.add(HangerChan)
+    ApplicationWindow.add(HangerChan)
     logger.info("Added the Hanger-chan widget to the window")
 
     PhysicsUtil.world.setContactListener(ContactAdapter)
@@ -44,6 +44,7 @@ fun main() {
         if (counter % 12 == 0) {
             for (hWnd in Win32WindowUtil.getAllWindows(0)) {
                 if (Win32WindowUtil.getTitle(hWnd) !in WindowUtil.annoyingPrograms &&
+                        Win32WindowUtil.getTitle(hWnd) != ApplicationWindow.title &&
                         !HangerChan.windowList.any { it.hWnd == hWnd }) {
                     WindowOpenEvent.trigger(hWnd)
                 }
@@ -85,8 +86,7 @@ fun main() {
     timer.start()
     logger.info("Started the animation and window detection timer")
 
-    window.pack()
-    window.isVisible = true
+    ApplicationWindow.isVisible = true
     logger.debug("Made the window visible")
 
     BorderUtil.createAllMonitorBorders(HangerChan.borders, PhysicsUtil.world)

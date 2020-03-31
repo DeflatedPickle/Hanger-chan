@@ -7,7 +7,6 @@ import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
-import org.apache.logging.log4j.LogManager
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -19,6 +18,7 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
+import org.apache.logging.log4j.LogManager
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
@@ -28,12 +28,12 @@ import org.jbox2d.dynamics.BodyType
 object HangerChan : JPanel() {
     private val logger = LogManager.getLogger(HangerChan::class.simpleName)
 
-    val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
+    private val sheet = SpriteSheet("/hangerchan/Hangerchan", 8, 10)
     var currentAction = Action.Idle
 
-    var beingControlled = false
+    private var beingControlled = false
 
-    val body = PhysicsUtil.world.createBody(BodyDef().apply {
+    val body: Body = PhysicsUtil.world.createBody(BodyDef().apply {
         type = BodyType.DYNAMIC
         position.set(20f, -10f)
         fixedRotation = true
@@ -57,7 +57,7 @@ object HangerChan : JPanel() {
     var direction = -1
     // A cooldown that happens after the action is changed
     var graceCoolDown = 30
-    var currentFrame = 0
+    private var currentFrame = 0
 
     var collisionSide: Vec2? = null
 
@@ -65,7 +65,7 @@ object HangerChan : JPanel() {
     var isGrabbed = false
     var isBeingPulled = false
 
-    var justFell = false
+    private var justFell = false
 
     var onGround = false
 
@@ -73,10 +73,19 @@ object HangerChan : JPanel() {
         isOpaque = false
 
         ApplicationWindow.addMouseListener(object : MouseAdapter() {
+            override fun mouseMoved(e: MouseEvent?) {
+                ApplicationWindow.cursor = java.awt.Cursor.getPredefinedCursor(
+                        if (isInside()) {
+                            java.awt.Cursor.HAND_CURSOR
+                        } else {
+                            java.awt.Cursor.DEFAULT_CURSOR
+                        }
+                )
+            }
+
             override fun mousePressed(e: MouseEvent) {
                 // If inside Hanger-chan
-                if (Cursor.mouseX > body.position.x - sheet.spriteWidth / 2 && Cursor.mouseX < body.position.x + sheet.spriteWidth / 2 &&
-                        Cursor.mouseY > body.position.y - sheet.spriteHeight / 2 && Cursor.mouseY < body.position.y + sheet.spriteHeight / 2) {
+                if (isInside()) {
                     isGrabbed = true
 
                     Cursor.clickedX = e.xOnScreen * PhysicsUtil.scaleDown
@@ -100,7 +109,7 @@ object HangerChan : JPanel() {
                             embeddedWindow = nativeWindow.hWnd
                             nativeWindow.body.isActive = false
 
-                            logger.info("Placed Hanger-chan inside ${Win32WindowUtil.getTitle(embeddedWindow!!)}")
+                            logger.info("Placed Hanger-chan inside ${Win32WindowUtil.getTitle(embeddedWindow)}")
 
                             for (i in nativeWindow.internalBodyList) {
                                 i.isActive = true
@@ -171,6 +180,11 @@ object HangerChan : JPanel() {
             }
         })
     }
+
+    fun isInside(): Boolean = Cursor.body.position.x > body.position.x - (sheet.spriteWidth / 2) * PhysicsUtil.scaleDown &&
+                Cursor.body.position.x < body.position.x + (sheet.spriteWidth / 2) * PhysicsUtil.scaleDown &&
+                Cursor.body.position.y > body.position.y - (sheet.spriteHeight / 2) * PhysicsUtil.scaleDown &&
+                Cursor.body.position.y < body.position.y + (sheet.spriteHeight / 2) * PhysicsUtil.scaleDown
 
     fun animate() {
         currentFrame++
