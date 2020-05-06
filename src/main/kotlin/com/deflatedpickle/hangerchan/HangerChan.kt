@@ -39,7 +39,10 @@ object HangerChan : JPanel() {
         fixedRotation = true
     }).apply {
         createFixture(PolygonShape().apply {
-            setAsBox((sheet.spriteWidth.toFloat() / 4) * PhysicsUtil.scaleDown, (sheet.spriteHeight.toFloat() / 4) * PhysicsUtil.scaleDown)
+            setAsBox(
+                    PhysicsUtil.guiToPhysics(sheet.spriteWidth / 4f),
+                    PhysicsUtil.guiToPhysics(sheet.spriteHeight / 4f)
+            )
         }, 1f).apply {
             m_mass = 1f
             friction = 0.3f
@@ -48,7 +51,7 @@ object HangerChan : JPanel() {
     }
 
     var borders: MutableList<Body> = mutableListOf()
-    var windowList: MutableSet<NativeWindow> = mutableSetOf()
+    var windowList: MutableList<NativeWindow> = mutableListOf()
 
     var isEmbedded = false
     var embeddedWindow: WinDef.HWND = User32.INSTANCE.GetDesktopWindow()
@@ -88,26 +91,26 @@ object HangerChan : JPanel() {
                 if (isInside()) {
                     isGrabbed = true
 
-                    Cursor.clickedX = e.xOnScreen * PhysicsUtil.scaleDown
-                    Cursor.clickedY = e.yOnScreen * PhysicsUtil.scaleDown
+                    Cursor.clickedX = e.xOnScreen
+                    Cursor.clickedY = e.yOnScreen
                 }
             }
 
             override fun mouseReleased(e: MouseEvent) {
                 if (isGrabbed) {
-                    Cursor.releasedX = e.xOnScreen * PhysicsUtil.scaleDown
-                    Cursor.releasedY = e.yOnScreen * PhysicsUtil.scaleDown
+                    Cursor.releasedX = e.xOnScreen
+                    Cursor.releasedY = e.yOnScreen
 
                     // TODO: Drag over desktop to reset the embedded window
                     for (nativeWindow in windowList) {
                         if (nativeWindow.hWnd != embeddedWindow &&
-                                Cursor.mouseX * PhysicsUtil.scaleUp > nativeWindow.lastUnits.left &&
-                                Cursor.mouseX * PhysicsUtil.scaleUp < nativeWindow.lastUnits.right &&
-                                Cursor.mouseY * PhysicsUtil.scaleUp > nativeWindow.lastUnits.top &&
-                                Cursor.mouseY * PhysicsUtil.scaleUp < nativeWindow.lastUnits.bottom) {
+                                Cursor.mouseX > nativeWindow.lastUnits.left &&
+                                Cursor.mouseX < nativeWindow.lastUnits.right &&
+                                Cursor.mouseY > nativeWindow.lastUnits.top &&
+                                Cursor.mouseY < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
                             embeddedWindow = nativeWindow.hWnd
-                            nativeWindow.body.isActive = false
+                            nativeWindow.fullBody.isActive = false
 
                             logger.info("Placed Hanger-chan inside ${Win32WindowUtil.getTitle(embeddedWindow)}")
 
@@ -122,7 +125,11 @@ object HangerChan : JPanel() {
                         val list = mutableListOf<Boolean>()
 
                         for (nativeWindow in windowList) {
-                            if (!nativeWindow.lastUnits.isInside(Cursor.mouseX, Cursor.mouseY, PhysicsUtil.scaleUp)) {
+                            if (!nativeWindow.lastUnits.isInside(
+                                            PhysicsUtil.guiToPhysics(Cursor.mouseX),
+                                            PhysicsUtil.guiToPhysics(Cursor.mouseY)
+                                    )
+                            ) {
                                 list.add(false)
                             } else {
                                 list.add(true)
@@ -142,8 +149,8 @@ object HangerChan : JPanel() {
             }
 
             override fun mouseDragged(e: MouseEvent) {
-                Cursor.mouseX = e.xOnScreen * PhysicsUtil.scaleDown
-                Cursor.mouseY = e.yOnScreen * PhysicsUtil.scaleDown
+                Cursor.mouseX = e.xOnScreen
+                Cursor.mouseY = e.yOnScreen
 
                 if (isGrabbed) {
                     isBeingPulled = true
@@ -181,10 +188,11 @@ object HangerChan : JPanel() {
         })
     }
 
-    fun isInside(): Boolean = Cursor.body.position.x > body.position.x - (sheet.spriteWidth / 2) * PhysicsUtil.scaleDown &&
-                Cursor.body.position.x < body.position.x + (sheet.spriteWidth / 2) * PhysicsUtil.scaleDown &&
-                Cursor.body.position.y > body.position.y - (sheet.spriteHeight / 2) * PhysicsUtil.scaleDown &&
-                Cursor.body.position.y < body.position.y + (sheet.spriteHeight / 2) * PhysicsUtil.scaleDown
+    fun isInside(): Boolean =
+            PhysicsUtil.guiToPhysics(Cursor.body.position.x) > body.position.x - sheet.spriteWidth / 2 &&
+            PhysicsUtil.guiToPhysics(Cursor.body.position.x) < body.position.x + sheet.spriteWidth / 2 &&
+            PhysicsUtil.guiToPhysics(Cursor.body.position.y) > body.position.y - sheet.spriteHeight / 2 &&
+            PhysicsUtil.guiToPhysics(Cursor.body.position.y) < body.position.y + sheet.spriteHeight / 2
 
     fun animate() {
         currentFrame++
@@ -209,10 +217,10 @@ object HangerChan : JPanel() {
                 }
             }
 
-            if (body.linearVelocity.y < -1 && Cursor.clickedY == 0f || currentAction == Action.Thrown) {
+            if (body.linearVelocity.y < -1 && PhysicsUtil.guiToPhysics(Cursor.clickedY) == 0f || currentAction == Action.Thrown) {
                 currentAction = Action.Falling
                 justFell = true
-            } else if (Cursor.clickedY != 0f) {
+            } else if (PhysicsUtil.guiToPhysics(Cursor.clickedY) != 0f) {
                 currentAction = Action.Thrown
             } else {
                 if (justFell) {
@@ -237,9 +245,9 @@ object HangerChan : JPanel() {
         // println("Position: ${body.position}, Velocity: ${body.linearVelocity}")
         g.drawImage(
                 sheet.spriteMap[currentAction.toString()]!![currentFrame],
-                (body.position.x * PhysicsUtil.scaleUp - sheet.spriteWidth / 4 +
+                (PhysicsUtil.physicsToGui(body.position.x) - sheet.spriteWidth / 4 +
                         if (direction == -1) sheet.spriteWidth / 2 else 0).toInt(),
-                (-body.position.y * PhysicsUtil.scaleUp - sheet.spriteHeight / 4).toInt(),
+                (PhysicsUtil.physicsToGui(-body.position.y) - sheet.spriteHeight / 4).toInt(),
                 (sheet.spriteWidth / 2) * direction,
                 sheet.spriteHeight / 2,
                 this
@@ -281,13 +289,13 @@ object HangerChan : JPanel() {
                 }
 
                 if (isGrabbed) {
-                    if (Cursor.mouseX * PhysicsUtil.scaleUp > w.lastUnits.left &&
-                            Cursor.mouseX * PhysicsUtil.scaleUp < w.lastUnits.right &&
-                            Cursor.mouseY * PhysicsUtil.scaleUp > w.lastUnits.top &&
-                            Cursor.mouseY * PhysicsUtil.scaleUp < w.lastUnits.bottom) {
+                    if (Cursor.mouseX > w.lastUnits.left &&
+                            Cursor.mouseX < w.lastUnits.right &&
+                            Cursor.mouseY > w.lastUnits.top &&
+                            Cursor.mouseY < w.lastUnits.bottom) {
                         g2D.color = Color.CYAN
                         g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
-                        PhysicsUtil.drawWindowFill(g2D, w.body)
+                        PhysicsUtil.drawWindowFill(g2D, w.fullBody)
                         break
                     }
                 }
@@ -295,7 +303,7 @@ object HangerChan : JPanel() {
 
             for (window in windowList) {
                 g2D.stroke = BasicStroke(2f)
-                PhysicsUtil.drawWindowShape(window.hWnd, g2D, window.body)
+                PhysicsUtil.drawWindowShape(window, g2D)
             }
         }
     }

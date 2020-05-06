@@ -5,6 +5,7 @@ package com.deflatedpickle.hangerchan.util.win32
 import com.deflatedpickle.jna.TITLEBARINFO
 import com.deflatedpickle.jna.User32Extended
 import com.sun.jna.Native
+import com.sun.jna.Pointer
 import com.sun.jna.StringArray
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
@@ -19,6 +20,8 @@ object Win32WindowUtil {
      * A map of the processes running (not updated during run-time)
      */
     val processMap = mutableMapOf<String, IntByReference>()
+
+    var windowCount = 0
 
     init {
         for (ph in ProcessHandle.allProcesses()) {
@@ -49,7 +52,24 @@ object Win32WindowUtil {
             true
         }, null)
 
+        windowCount = windows.size - 1
         return windows
+    }
+
+    // Credit: https://stackoverflow.com/a/3238193
+    fun getAllWindowsByTop(monitor: Int): List<WinDef.HWND> {
+        val list = mutableListOf<WinDef.HWND>()
+
+        var top = User32Extended.INSTANCE.GetTopWindow(WinDef.HWND(Pointer(0L)))
+        for (i in 0..100) {
+            if (isWindow(top) &&
+                    User32.INSTANCE.MonitorFromWindow(top, User32.MONITOR_DEFAULTTONEAREST) == getMonitorFromIndex(monitor)) {
+                list.add(top)
+            }
+            top = User32Extended.INSTANCE.GetWindow(top, User32.GW_HWNDNEXT)
+        }
+
+        return list
     }
 
     // TODO: Specify what monitor to look for windows on

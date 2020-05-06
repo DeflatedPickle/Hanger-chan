@@ -2,10 +2,27 @@
 
 package com.deflatedpickle.hangerchan.extensions
 
-import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.sun.jna.platform.win32.WinDef
 
-fun WinDef.RECT.isInside(x: Float, y: Float, scale: Float) = x * PhysicsUtil.scaleUp > this.left &&
-            x * PhysicsUtil.scaleUp < this.right &&
-            y * PhysicsUtil.scaleUp > this.top &&
-            y * PhysicsUtil.scaleUp < this.bottom
+fun WinDef.RECT.isInside(x: Int, y: Int) =
+        isInside(x.toFloat(), y.toFloat(), 1f)
+
+fun WinDef.RECT.isInside(x: Float, y: Float) =
+        isInside(x, y, 1f)
+
+fun WinDef.RECT.isInside(x: Float, y: Float, scale: Float) =
+        isInsideX(x, scale) && isInsideY(y, scale)
+
+fun WinDef.RECT.isInsideX(x: Int) =
+        isInsideX(x.toFloat(), 1f)
+
+fun WinDef.RECT.isInsideX(x: Float, scale: Float) =
+        x * scale > this.left &&
+        x * scale < this.right
+
+fun WinDef.RECT.isInsideY(y: Int) =
+        isInsideX(y.toFloat(), 1f)
+
+fun WinDef.RECT.isInsideY(y: Float, scale: Float) =
+        y * scale > this.top &&
+        y * scale < this.bottom

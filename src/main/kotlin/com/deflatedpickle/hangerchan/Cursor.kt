@@ -9,12 +9,12 @@ object Cursor {
     val body = CursorUtil.createBody(PhysicsUtil.world)
 
     // Changes when the mouse is clicked -- used to determine thrown force
-    var clickedX = 0f
-    var clickedY = 0f
-    var releasedX = 0f
-    var releasedY = 0f
+    var clickedX = 0
+    var clickedY = 0
+    var releasedX = 0
+    var releasedY = 0
 
     // Changes when the mouse is moved
-    var mouseX = 0f
-    var mouseY = 0f
+    var mouseX = 0
+    var mouseY = 0
 }

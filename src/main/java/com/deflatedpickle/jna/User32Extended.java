@@ -61,4 +61,7 @@ public interface User32Extended extends User32 {
     boolean IsIconic(WinDef.HWND hwnd);
 
     HCURSOR GetCursor();
+
+    WinDef.HWND GetTopWindow(HWND hWnd);
+    WinDef.HWND GetWindow(HWND hWnd, int flag);
 }

@@ -11,12 +11,13 @@ class NativeWindow(
     val hWnd: WinDef.HWND,
     var lastUnits: WinDef.RECT,
     var newUnits: WinDef.RECT,
-    val body: Body,
-    val internalBodyList: MutableList<Body>
+    val fullBody: Body,
+    val internalBodyList: MutableList<Body>,
+    val splitBodyList: MutableList<Body> = mutableListOf()
 ) {
     fun moveTo(x: Float, y: Float, width: Float, height: Float) {
-        this.body.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
-        (this.body.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
+        this.fullBody.setTransform(Vec2(x + width / 2, -y - height / 2), 0f)
+        (this.fullBody.fixtureList.shape as PolygonShape).setAsBox(width / 2, height / 2)
 
         this.internalBodyList[0].setTransform(Vec2(x, -y - height / 2), 0f)
         (this.internalBodyList[0].fixtureList.shape as PolygonShape).setAsBox(0f, height / 2)

@@ -14,7 +14,8 @@ import org.jbox2d.dynamics.Body
 object WindowOpenEvent : AbstractEvent<WinDef.HWND>() {
     init {
         WindowOpenEvent.addListener { hWnd ->
-            WindowUtil.openWindows.add(hWnd)
+            WindowUtil.openWindows.add(0, hWnd)
+            println(WindowUtil.openWindows.map { Win32WindowUtil.getTitle(it) })
 
             val rect = WindowUtil.scaleWindowRect(hWnd)
 

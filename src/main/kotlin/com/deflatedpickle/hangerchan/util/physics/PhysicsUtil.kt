@@ -2,8 +2,9 @@
 
 package com.deflatedpickle.hangerchan.util.physics
 
+import com.deflatedpickle.hangerchan.NativeWindow
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
-import com.sun.jna.platform.win32.WinDef
+import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
@@ -15,8 +16,8 @@ import org.jbox2d.dynamics.World
 
 object PhysicsUtil {
     // *claw* RAWR *claw* UWU
-    val scaleUp = 20f
-    val scaleDown = 1 / scaleUp
+    private const val scaleUp = 20f
+    private const val scaleDown = 1 / scaleUp
 
     val world = World(Vec2(0f, -80f))
 
@@ -25,6 +26,10 @@ object PhysicsUtil {
     init {
         logger.debug("Constructed the world with gravity vector of { ${world.gravity.x}, ${world.gravity.y} }")
     }
+
+    fun physicsToGui(value: Float) = value * scaleUp
+    fun guiToPhysics(value: Int) = guiToPhysics(value.toFloat())
+    fun guiToPhysics(value: Float) = value * scaleDown
 
     fun drawPhysicsShape(graphics2D: Graphics2D, body: Body) {
         val shape = (body.fixtureList.shape as PolygonShape)
@@ -58,6 +63,7 @@ object PhysicsUtil {
         val y = body.transform.p.y
 
         val originalFont = graphics2D.font
+        val originalColour = graphics2D.color
         graphics2D.font = Font(originalFont.fontName, Font.BOLD, 14)
 
         val finalX = (vertices[0].x + x + xIncrease) * scaleUp
@@ -71,37 +77,37 @@ object PhysicsUtil {
         graphics2D.drawString(string, finalX + 6, finalY)
 
         graphics2D.font = originalFont
+        graphics2D.color = originalColour
     }
 
     // Some windows pass through the filter and get bounding boxes without actually showing a window
     // This function helps find the windows that behave this way, so they can be added to the blacklist
     // It also draws the windows borders by calling "drawPhysicsShape"
-    fun drawWindowShape(hwnd: WinDef.HWND, graphics2D: Graphics2D, body: Body) {
-        val shape = (body.fixtureList.shape as PolygonShape)
-        val vertices = shape.vertices
-
-        val x = body.transform.p.x
-        val y = body.transform.p.y
-
-        val title = Win32WindowUtil.getTitle(hwnd)
-
-        val originalFont = graphics2D.font
-        graphics2D.font = Font(originalFont.fontName, Font.BOLD, 14)
-
-        val finalX = (vertices[0].x + x) * scaleUp
-        val finalY = (vertices[0].y - y + 1) * scaleUp
-        val width = graphics2D.fontMetrics.stringWidth(title)
-        val height = graphics2D.fontMetrics.height
-
-        graphics2D.color = Color.BLACK
-        graphics2D.fillRect(finalX.toInt(), finalY.toInt() - height, width + 12, height + (height / 2))
-        graphics2D.color = Color.WHITE
-        graphics2D.drawString(title, finalX + 6, finalY)
-
-        graphics2D.font = originalFont
+    fun drawWindowShape(nativeWindow: NativeWindow, graphics2D: Graphics2D) {
+        drawText(
+                graphics2D,
+                Win32WindowUtil.getTitle(nativeWindow.hWnd),
+                nativeWindow.fullBody
+        )
 
         graphics2D.color = Color.MAGENTA
-        drawPhysicsShape(graphics2D, body)
+        drawPhysicsShape(graphics2D, nativeWindow.fullBody)
+
+        graphics2D.color = Color.ORANGE
+        graphics2D.stroke = BasicStroke(6f)
+        drawBodyList(graphics2D, nativeWindow)
+    }
+
+    fun drawBodyList(graphics2D: Graphics2D, nativeWindow: NativeWindow) {
+        for (body in nativeWindow.splitBodyList) {
+            drawText(
+                    graphics2D,
+                    "Belongs to ${Win32WindowUtil.getTitle(nativeWindow.hWnd)}",
+                    body
+            )
+
+            drawPhysicsShape(graphics2D, body)
+        }
     }
 
     fun drawWindowFill(graphics2D: Graphics2D, body: Body) {

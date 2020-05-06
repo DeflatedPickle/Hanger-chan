@@ -2,6 +2,7 @@
 
 package com.deflatedpickle.hangerchan
 
+import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import java.util.concurrent.ThreadLocalRandom
 import org.jbox2d.common.Vec2
 
@@ -67,7 +68,10 @@ enum class Action {
         override fun automatic() {
             if (HangerChan.isBeingPulled) {
                 HangerChan.body.linearVelocity.x = 0f
-                HangerChan.body.setTransform(Vec2(Cursor.mouseX, -Cursor.mouseY), 0f)
+                HangerChan.body.setTransform(Vec2(
+                        PhysicsUtil.guiToPhysics(Cursor.mouseX),
+                        PhysicsUtil.guiToPhysics(-Cursor.mouseY)),
+                        0f)
             }
         }
 
@@ -88,10 +92,10 @@ enum class Action {
             // body.linearVelocity = force
             // currentAction = Action.Falling
 
-            Cursor.clickedX = 0f
-            Cursor.clickedY = 0f
-            Cursor.releasedX = 0f
-            Cursor.releasedY = 0f
+            Cursor.clickedX = 0
+            Cursor.clickedY = 0
+            Cursor.releasedX = 0
+            Cursor.releasedY = 0
         }
 
         override fun manual() {

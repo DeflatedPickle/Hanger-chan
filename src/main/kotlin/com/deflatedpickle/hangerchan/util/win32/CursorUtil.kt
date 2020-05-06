@@ -31,10 +31,10 @@ object CursorUtil {
         val cursorWidth = User32.INSTANCE.GetSystemMetrics(User32.SM_CXCURSOR)
         val cursorHeight = User32.INSTANCE.GetSystemMetrics(User32.SM_CYCURSOR)
         Cursor.body.setTransform(Vec2(
-                (cursorLocation.x.toFloat() + cursorWidth / 4) * PhysicsUtil.scaleDown,
-                -(cursorLocation.y.toFloat() + cursorHeight / 4) * PhysicsUtil.scaleDown
+                PhysicsUtil.guiToPhysics(cursorLocation.x.toFloat() + cursorWidth / 4),
+                PhysicsUtil.guiToPhysics(-(cursorLocation.y.toFloat() + cursorHeight / 4))
         ), 0f)
-        (Cursor.body.fixtureList.shape as PolygonShape).setAsBox((cursorWidth / 2) * PhysicsUtil.scaleDown, (cursorHeight / 2) * PhysicsUtil.scaleDown)
+        (Cursor.body.fixtureList.shape as PolygonShape).setAsBox(PhysicsUtil.guiToPhysics(cursorWidth / 2), PhysicsUtil.guiToPhysics(cursorHeight / 2))
         Cursor.body.isActive = User32.INSTANCE.GetAsyncKeyState(User32Extended.VK_LBUTTON) < 0 && !hangerChan.isGrabbed
     }
 
