@@ -76,7 +76,7 @@ object HangerChan : JPanel() {
         isOpaque = false
 
         ApplicationWindow.addMouseListener(object : MouseAdapter() {
-            override fun mouseMoved(e: MouseEvent?) {
+            override fun mouseMoved(e: MouseEvent) {
                 ApplicationWindow.cursor = java.awt.Cursor.getPredefinedCursor(
                         if (isInside()) {
                             java.awt.Cursor.HAND_CURSOR
@@ -195,9 +195,9 @@ object HangerChan : JPanel() {
             PhysicsUtil.guiToPhysics(Cursor.body.position.y) < body.position.y + sheet.spriteHeight / 2
 
     fun animate() {
-        currentFrame++
-
-        if (currentFrame >= 8) {
+        if (currentFrame < 7) {
+            currentFrame++
+        } else {
             currentFrame = 0
         }
 

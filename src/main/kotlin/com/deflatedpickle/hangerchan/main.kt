@@ -11,8 +11,10 @@ import com.deflatedpickle.hangerchan.util.physics.BorderUtil
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.deflatedpickle.hangerchan.util.win32.CursorUtil
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
+import com.deflatedpickle.jna.WinUserExtended
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.platform.win32.WinUser
 import java.awt.event.ActionListener
 import javax.swing.Timer
 import org.apache.logging.log4j.LogManager
@@ -21,9 +23,68 @@ import org.apache.logging.log4j.LogManager
 fun main() {
     System.setProperty("log4j.skipJansi", "false")
     val logger = LogManager.getLogger("Main")
+
+    // Creates and starts a new thread for native events
+    val nativeEventsThread = Thread({
+        // Creates a hook to listen for native events
+        val event = User32.INSTANCE.SetWinEventHook(
+                WinUserExtended.EVENT_MIN,
+                WinUserExtended.EVENT_MAX,
+                null,
+                { _, event, hwnd,
+                  idObject, idChild,
+                  dwEventThread, dwmsEventTime ->
+                    hwnd?.let {
+                        WindowUtil.findNativeWindowForHWND(hwnd)?.let {
+                            var output = true
+                            // High is always 0, so just test the low
+                            when (event.low.toInt()) {
+                                WinUserExtended.EVENT_OBJECT_CREATE -> {
+                                    // TODO: Object create events are not fired for windows opening, figure out why
+                                }
+                                WinUserExtended.EVENT_OBJECT_HIDE,
+                                WinUserExtended.EVENT_SYSTEM_CAPTURESTART,
+                                WinUserExtended.EVENT_SYSTEM_CAPTUREEND -> {
+                                    WindowUtil.oldActiveWindow = WindowUtil.activeWindow
+                                    WindowUtil.activeWindow = it.hWnd
+                                    WindowChangeEvent.trigger(it)
+                                }
+                                WinUserExtended.EVENT_OBJECT_LOCATIONCHANGE -> {
+                                    it.newUnits = Win32WindowUtil.getRect(hwnd)
+                                    WindowMoveEvent.trigger(it)
+                                }
+                                WinUserExtended.EVENT_OBJECT_DESTROY -> {
+                                    WindowCloseEvent.trigger(it)
+                                }
+                                else -> output = false
+                            }
+
+                            if (output) {
+                                logger.debug("An event was sent with the code $event from $dwEventThread, which is linked with ${Win32WindowUtil.getTitle(hwnd)} at $dwmsEventTime")
+                            }
+                        }
+                    }
+                }, 0, 0,
+                WinUserExtended.WINEVENT_OUTOFCONTEXT or WinUserExtended.WINEVENT_SKIPOWNPROCESS)
+        if (event == null) {
+            logger.warn("The native event hook failed to register")
+        } else {
+            logger.info("Registered the native event hook")
+        }
+
+        // Runs a message loop so the hook works
+        // FIXME: Sometimes this throws Invalid memory access
+        val message: WinUser.MSG = WinUser.MSG()
+        while (User32.INSTANCE.GetMessage(message, null, 0, 0) != 0) {
+            User32.INSTANCE.TranslateMessage(message)
+            User32.INSTANCE.DispatchMessage(message)
+        }
+    }, "NativeEvents")
+    logger.info("Spawned the native event thread")
+
     ApplicationWindow
 
-    logger.info("Launched Hanger-chan")
+    logger.info("Constructed the window")
 
     // 1.524
     // What do those numbers mean? I left that comment over a year ago with no context (16/03/2020)
@@ -33,14 +94,20 @@ fun main() {
     logger.info("Added the Hanger-chan widget to the window")
 
     PhysicsUtil.world.setContactListener(ContactAdapter)
-    logger.debug("Added the collision listener")
+    logger.debug("Set the worlds collision listener")
 
     // Cursor
     Cursor
-    logger.debug("Created the cursor body")
+    logger.debug("Constructed the cursor body")
+
+    ApplicationWindow.isVisible = true
+    logger.debug("Made the window visible")
+
+    BorderUtil.createAllMonitorBorders(HangerChan.borders, PhysicsUtil.world)
+    logger.debug("Created monitor borders")
 
     var counter = 0
-    val timer = Timer(1000 / 144 * 4, ActionListener {
+    val timer = Timer(1000 / 144 * 3, ActionListener {
         counter++
 
         // Check if there are any new windows
@@ -52,34 +119,15 @@ fun main() {
                     WindowOpenEvent.trigger(hWnd)
                 }
             }
-
-            for (i in WindowUtil.openWindows) {
-                if (Win32WindowUtil.getTitle(i).isEmpty() && HangerChan.windowList.map { it.hWnd }.contains(i)) {
-                    for (w in HangerChan.windowList) {
-                        if (w.hWnd == i) {
-                            WindowCloseEvent.trigger(w)
-                        }
-                    }
-                }
-            }
         }
 
         if (counter % 3 == 0) {
             PhysicsUtil.world.step(1f / 60f, 1, 1)
             // logger.info("Increased the PhysicsUtil.world step")
-
             HangerChan.animate()
         }
 
         if (counter % 12 == 0) {
-            with(User32.INSTANCE.GetForegroundWindow()) {
-                if (this != WindowUtil.activeWindow) {
-                    WindowUtil.oldActiveWindow = WindowUtil.activeWindow
-                    WindowUtil.activeWindow = this
-                    WindowChangeEvent.trigger(WindowUtil.activeWindow)
-                }
-            }
-
             val windowHWNDList = mutableListOf<WinDef.HWND>()
             val windowRectList = mutableListOf<WinDef.RECT>()
             for (hWnd in Win32WindowUtil.getAllWindowsByTop(0)) {
@@ -87,7 +135,6 @@ fun main() {
                 windowRectList.add(Win32WindowUtil.getRect(hWnd))
             }
 
-            val chunkSize = 1
             // Get each window rect, from the bottom to the top
             for ((index, rect) in windowRectList.reversed().withIndex()) {
                 val nativeWindow = WindowUtil.findNativeWindowForHWND(windowHWNDList.reversed()[index], HangerChan.windowList)
@@ -122,26 +169,11 @@ fun main() {
             }
         }
 
-        for (nativeWindow in HangerChan.windowList) {
-            val rect = Win32WindowUtil.getRect(nativeWindow.hWnd)
-
-            // Check if the positions are the same before moving the collision box
-            // Occasionally fails, leaving the box far away from the window, don't know why
-            if (nativeWindow.lastUnits.top != rect.top && nativeWindow.lastUnits.bottom != rect.bottom && nativeWindow.lastUnits.left != rect.left && nativeWindow.lastUnits.right != rect.right) {
-                nativeWindow.newUnits = rect
-                WindowMoveEvent.trigger(nativeWindow)
-            }
-        }
-
         CursorUtil.update(HangerChan)
         HangerChan.repaint()
     })
     timer.start()
     logger.info("Started the animation and window detection timer")
 
-    ApplicationWindow.isVisible = true
-    logger.debug("Made the window visible")
-
-    BorderUtil.createAllMonitorBorders(HangerChan.borders, PhysicsUtil.world)
-    logger.debug("Created monitor borders")
+    nativeEventsThread.start()
 }

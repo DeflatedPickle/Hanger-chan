@@ -40,6 +40,7 @@ class SpriteSheet(
         var gridX = 0
         var gridY = 0
 
+        @Suppress("UseWithIndex")
         for (anim in animations.lines()) {
             spriteMap[anim] = mutableListOf()
 

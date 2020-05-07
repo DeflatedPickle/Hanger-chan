@@ -2,6 +2,7 @@
 
 package com.deflatedpickle.hangerchan.util
 
+import com.deflatedpickle.hangerchan.HangerChan
 import com.deflatedpickle.hangerchan.NativeWindow
 import com.deflatedpickle.hangerchan.extensions.isInsideX
 import com.deflatedpickle.hangerchan.extensions.isInsideY
@@ -54,6 +55,8 @@ object WindowUtil {
 
         return nativeWindow
     }
+
+    fun findNativeWindowForHWND(hWnd: WinDef.HWND): NativeWindow? = this.findNativeWindowForHWND(hWnd, HangerChan.windowList)
 
     fun createBody(rect: Rect): Body =
             PhysicsUtil.world.createBody(BodyDef().apply {

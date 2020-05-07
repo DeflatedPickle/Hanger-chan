@@ -2,17 +2,17 @@
 
 package com.deflatedpickle.hangerchan.event
 
+import com.deflatedpickle.hangerchan.NativeWindow
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
-import com.sun.jna.platform.win32.WinDef
 
-object WindowChangeEvent : AbstractEvent<WinDef.HWND?>() {
+object WindowChangeEvent : AbstractEvent<NativeWindow>() {
     init {
         WindowChangeEvent.addListener {
         }
     }
 
-    override fun trigger(t: WinDef.HWND?) {
-        logger.debug("Changed to ${if (t != null) Win32WindowUtil.getTitle(t) else "null" }")
+    override fun trigger(t: NativeWindow) {
+        logger.debug("Changed to ${Win32WindowUtil.getTitle(t.hWnd)}")
         super.trigger(t)
     }
 }
