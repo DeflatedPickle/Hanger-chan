@@ -36,7 +36,7 @@ enum class Action {
     },
     Walking {
         override fun automatic() {
-            HangerChan.walk(HangerChan.direction)
+            HangerChan.walkToPoint(Cursor.currentPoint)
 
             if (HangerChan.graceCoolDown == 0) {
                 val random = ThreadLocalRandom.current().nextInt(0, 11)
@@ -69,8 +69,8 @@ enum class Action {
             if (HangerChan.isBeingPulled) {
                 HangerChan.body.linearVelocity.x = 0f
                 HangerChan.body.setTransform(Vec2(
-                        PhysicsUtil.guiToPhysics(Cursor.mouseX),
-                        PhysicsUtil.guiToPhysics(-Cursor.mouseY)),
+                        PhysicsUtil.guiToPhysics(Cursor.currentPoint.x),
+                        PhysicsUtil.guiToPhysics(-Cursor.currentPoint.y)),
                         0f)
             }
         }
@@ -92,10 +92,8 @@ enum class Action {
             // body.linearVelocity = force
             // currentAction = Action.Falling
 
-            Cursor.clickedX = 0
-            Cursor.clickedY = 0
-            Cursor.releasedX = 0
-            Cursor.releasedY = 0
+            Cursor.clickedPoint.reset()
+            Cursor.releasedPoint.reset()
         }
 
         override fun manual() {

@@ -21,7 +21,7 @@ fun WinDef.RECT.isInsideX(x: Float, scale: Float) =
         x * scale < this.right
 
 fun WinDef.RECT.isInsideY(y: Int) =
-        isInsideX(y.toFloat(), 1f)
+        isInsideY(y.toFloat(), 1f)
 
 fun WinDef.RECT.isInsideY(y: Float, scale: Float) =
         y * scale > this.top &&

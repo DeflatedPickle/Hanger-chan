@@ -31,11 +31,11 @@ fun main() {
                 WinUserExtended.EVENT_MIN,
                 WinUserExtended.EVENT_MAX,
                 null,
-                { _, event, hwnd,
-                  idObject, idChild,
-                  dwEventThread, dwmsEventTime ->
-                    hwnd?.let {
-                        WindowUtil.findNativeWindowForHWND(hwnd)?.let {
+                { _, event, hWnd,
+                  _, _,
+                  dwEventThread, _ ->
+                    hWnd?.let {
+                        WindowUtil.findNativeWindowForHWND(hWnd)?.let {
                             var output = true
                             // High is always 0, so just test the low
                             when (event.low.toInt()) {
@@ -50,7 +50,7 @@ fun main() {
                                     WindowChangeEvent.trigger(it)
                                 }
                                 WinUserExtended.EVENT_OBJECT_LOCATIONCHANGE -> {
-                                    it.newUnits = Win32WindowUtil.getRect(hwnd)
+                                    it.newUnits = Win32WindowUtil.getRect(hWnd)
                                     WindowMoveEvent.trigger(it)
                                 }
                                 WinUserExtended.EVENT_OBJECT_DESTROY -> {
@@ -60,7 +60,7 @@ fun main() {
                             }
 
                             if (output) {
-                                logger.debug("An event was sent with the code $event from $dwEventThread, which is linked with ${Win32WindowUtil.getTitle(hwnd)} at $dwmsEventTime")
+                                logger.debug("An event was sent with the code $event from $dwEventThread, which is linked with ${Win32WindowUtil.getTitle(hWnd)}")
                             }
                         }
                     }
@@ -83,7 +83,6 @@ fun main() {
     logger.info("Spawned the native event thread")
 
     ApplicationWindow
-
     logger.info("Constructed the window")
 
     // 1.524

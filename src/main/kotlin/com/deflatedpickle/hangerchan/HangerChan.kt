@@ -3,27 +3,23 @@
 package com.deflatedpickle.hangerchan
 
 import com.deflatedpickle.hangerchan.extensions.isInside
+import com.deflatedpickle.hangerchan.util.WindowUtil
 import com.deflatedpickle.hangerchan.util.physics.PhysicsUtil
 import com.deflatedpickle.hangerchan.util.win32.Win32WindowUtil
 import com.sun.jna.platform.win32.User32
 import com.sun.jna.platform.win32.WinDef
-import java.awt.AlphaComposite
-import java.awt.BasicStroke
-import java.awt.Color
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.RenderingHints
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import javax.swing.JPanel
 import org.apache.logging.log4j.LogManager
 import org.jbox2d.collision.shapes.PolygonShape
 import org.jbox2d.common.Vec2
 import org.jbox2d.dynamics.Body
 import org.jbox2d.dynamics.BodyDef
 import org.jbox2d.dynamics.BodyType
+import java.awt.*
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.JPanel
 
 object HangerChan : JPanel() {
     private val logger = LogManager.getLogger(HangerChan::class.simpleName)
@@ -91,23 +87,21 @@ object HangerChan : JPanel() {
                 if (isInside()) {
                     isGrabbed = true
 
-                    Cursor.clickedX = e.xOnScreen
-                    Cursor.clickedY = e.yOnScreen
+                    Cursor.clickedPoint.set(e.xOnScreen, e.yOnScreen)
                 }
             }
 
             override fun mouseReleased(e: MouseEvent) {
                 if (isGrabbed) {
-                    Cursor.releasedX = e.xOnScreen
-                    Cursor.releasedY = e.yOnScreen
+                    Cursor.releasedPoint.set(e.xOnScreen, e.yOnScreen)
 
                     // TODO: Drag over desktop to reset the embedded window
                     for (nativeWindow in windowList) {
                         if (nativeWindow.hWnd != embeddedWindow &&
-                                Cursor.mouseX > nativeWindow.lastUnits.left &&
-                                Cursor.mouseX < nativeWindow.lastUnits.right &&
-                                Cursor.mouseY > nativeWindow.lastUnits.top &&
-                                Cursor.mouseY < nativeWindow.lastUnits.bottom) {
+                                Cursor.currentPoint.x > nativeWindow.lastUnits.left &&
+                                Cursor.currentPoint.x < nativeWindow.lastUnits.right &&
+                                Cursor.currentPoint.y > nativeWindow.lastUnits.top &&
+                                Cursor.currentPoint.y < nativeWindow.lastUnits.bottom) {
                             isEmbedded = true
                             embeddedWindow = nativeWindow.hWnd
                             nativeWindow.fullBody.isActive = false
@@ -126,8 +120,8 @@ object HangerChan : JPanel() {
 
                         for (nativeWindow in windowList) {
                             if (!nativeWindow.lastUnits.isInside(
-                                            PhysicsUtil.guiToPhysics(Cursor.mouseX),
-                                            PhysicsUtil.guiToPhysics(Cursor.mouseY)
+                                            PhysicsUtil.guiToPhysics(Cursor.currentPoint.x),
+                                            PhysicsUtil.guiToPhysics(Cursor.currentPoint.y)
                                     )
                             ) {
                                 list.add(false)
@@ -149,8 +143,7 @@ object HangerChan : JPanel() {
             }
 
             override fun mouseDragged(e: MouseEvent) {
-                Cursor.mouseX = e.xOnScreen
-                Cursor.mouseY = e.yOnScreen
+                Cursor.currentPoint.set(e.xOnScreen, e.yOnScreen)
 
                 if (isGrabbed) {
                     isBeingPulled = true
@@ -217,10 +210,12 @@ object HangerChan : JPanel() {
                 }
             }
 
-            if (body.linearVelocity.y < -1 && PhysicsUtil.guiToPhysics(Cursor.clickedY) == 0f || currentAction == Action.Thrown) {
+            if (body.linearVelocity.y < -1 &&
+                    PhysicsUtil.guiToPhysics(Cursor.clickedPoint.y) == 0f ||
+                    currentAction == Action.Thrown) {
                 currentAction = Action.Falling
                 justFell = true
-            } else if (PhysicsUtil.guiToPhysics(Cursor.clickedY) != 0f) {
+            } else if (PhysicsUtil.guiToPhysics(Cursor.clickedPoint.y) != 0f) {
                 currentAction = Action.Thrown
             } else {
                 if (justFell) {
@@ -289,10 +284,10 @@ object HangerChan : JPanel() {
                 }
 
                 if (isGrabbed) {
-                    if (Cursor.mouseX > w.lastUnits.left &&
-                            Cursor.mouseX < w.lastUnits.right &&
-                            Cursor.mouseY > w.lastUnits.top &&
-                            Cursor.mouseY < w.lastUnits.bottom) {
+                    if (Cursor.currentPoint.x > w.lastUnits.left &&
+                            Cursor.currentPoint.x < w.lastUnits.right &&
+                            Cursor.currentPoint.y > w.lastUnits.top &&
+                            Cursor.currentPoint.y < w.lastUnits.bottom) {
                         g2D.color = Color.CYAN
                         g2D.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f)
                         PhysicsUtil.drawWindowFill(g2D, w.fullBody)
@@ -310,6 +305,12 @@ object HangerChan : JPanel() {
 
     fun walk(direction: Int) {
         body.linearVelocity.x = 12f * direction
+    }
+
+    fun walkToPoint(point: WindowUtil.Point) {
+        Pathing.default.regenPath(point).apply {
+            println(this)
+        }
     }
 
     fun jump() {

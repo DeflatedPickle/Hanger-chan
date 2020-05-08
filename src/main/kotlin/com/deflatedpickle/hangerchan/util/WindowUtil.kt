@@ -28,7 +28,18 @@ object WindowUtil {
     val programBlacklist = listOf("Settings", "Microsoft Store", "Photos", "Films & TV", "Groove Music")
 
     class Rect(val x: Float, val y: Float, val width: Float, val height: Float)
-    class Point(val x: Int, val y: Int)
+    class Point(var x: Int, var y: Int) {
+        // That wasn't very cache data of you
+        private val cacheX = x
+        private val cacheY = y
+
+        fun resetPosition(): Point = this.setPosition(cacheX, cacheY)
+
+        fun setPosition(x: Int, y: Int): Point = this.apply {
+            this.x = x
+            this.y = y
+        }
+    }
 
     fun scaleWindowRect(hWnd: WinDef.HWND): Rect {
         return scaleRECT(Win32WindowUtil.getRect(hWnd))
